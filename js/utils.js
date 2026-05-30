@@ -4,6 +4,12 @@
  */
 
 class Utils {
+    static WATERMARK = 'Created by Rei';
+
+    static getWatermarkHtml() {
+        return `<div class="resume-watermark-first" aria-hidden="true"><span>${Utils.WATERMARK}</span></div>`;
+    }
+
     /**
      * Debounce function to limit the rate of function calls
      * @param {Function} func - The function to debounce
@@ -246,89 +252,14 @@ class Utils {
         toast.innerHTML = `
             <div class="toast-content">
                 <i class="${icons[type]}"></i>
-                <span>${message}</span>
-                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">
+                <span>${Utils.sanitizeHtml(message)}</span>
+                <button class="toast-close" aria-label="Dismiss notification">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
         `;
 
-        // Add toast styles if not already added
-        if (!document.getElementById('toast-styles')) {
-            const toastStyles = `
-                .toast {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: white;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-                    z-index: 10000;
-                    animation: slideInRight 0.3s ease;
-                    min-width: 300px;
-                    max-width: 500px;
-                }
-                
-                .toast-content {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.75rem;
-                    padding: 1rem 1.25rem;
-                }
-                
-                .toast-success { border-left: 4px solid #10b981; }
-                .toast-error { border-left: 4px solid #ef4444; }
-                .toast-warning { border-left: 4px solid #f59e0b; }
-                .toast-info { border-left: 4px solid #3b82f6; }
-                
-                .toast-success i { color: #10b981; }
-                .toast-error i { color: #ef4444; }
-                .toast-warning i { color: #f59e0b; }
-                .toast-info i { color: #3b82f6; }
-                
-                .toast-close {
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    color: #6b7280;
-                    padding: 0.25rem;
-                    border-radius: 4px;
-                    margin-left: auto;
-                }
-                
-                .toast-close:hover {
-                    background: #f3f4f6;
-                    color: #374151;
-                }
-                
-                @keyframes slideInRight {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                
-                @keyframes slideOutRight {
-                    from {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                    to {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                }
-            `;
-            
-            const styleSheet = document.createElement('style');
-            styleSheet.id = 'toast-styles';
-            styleSheet.textContent = toastStyles;
-            document.head.appendChild(styleSheet);
-        }
+        toast.querySelector('.toast-close').addEventListener('click', () => toast.remove());
 
         document.body.appendChild(toast);
 

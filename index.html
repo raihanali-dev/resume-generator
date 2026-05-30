@@ -10,7 +10,7 @@
     <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
     
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <!-- Styles -->
@@ -18,7 +18,6 @@
     <link rel="stylesheet" href="./css/templates.css">
     <link rel="stylesheet" href="./css/form.css">
     <link rel="stylesheet" href="./css/responsive.css">
-    
     <!-- PDF Generation Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -30,7 +29,10 @@
             <div class="header-content">
                 <div class="logo">
                     <i class="fas fa-file-alt"></i>
-                    <span>Resume Builder</span>
+                    <div class="logo-text">
+                        <span class="logo-title">Resume Builder</span>
+                        <span class="logo-by">by Rei</span>
+                    </div>
                 </div>
                 <nav class="nav">
                     <button id="backBtn" class="btn btn-secondary" style="display: none;">
@@ -47,13 +49,37 @@
         <div class="container">
             <!-- Welcome Screen -->
             <section id="welcomeScreen" class="welcome-screen">
-                <div class="welcome-content">
+                <div class="welcome-content animate-in">
+                    <div class="welcome-badge">
+                        <i class="fas fa-star"></i>
+                        Free &amp; No Sign-up Required
+                    </div>
                     <h1 class="welcome-title">Create Your Professional Resume</h1>
-                    <p class="welcome-subtitle">Choose from our collection of professionally designed templates and build your resume in minutes.</p>
-                    <button id="getStartedBtn" class="btn btn-primary btn-large">
-                        Get Started
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
+                    <p class="welcome-subtitle">Choose from professionally designed templates, fill in your details, and download a polished PDF in minutes — all in your browser.</p>
+                    <div class="welcome-features">
+                        <div class="welcome-feature">
+                            <i class="fas fa-palette"></i>
+                            <h3>5 Pro Templates</h3>
+                            <p>Modern, Classic, Minimal, Executive, and Creative designs.</p>
+                        </div>
+                        <div class="welcome-feature">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h3>Auto-Save</h3>
+                            <p>Your progress is saved locally as you type.</p>
+                        </div>
+                        <div class="welcome-feature">
+                            <i class="fas fa-file-pdf"></i>
+                            <h3>PDF Export</h3>
+                            <p>Download a print-ready resume instantly.</p>
+                        </div>
+                    </div>
+                    <div class="welcome-cta">
+                        <button id="getStartedBtn" class="btn btn-primary btn-large" aria-label="Get started building your resume">
+                            Get Started
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                        </button>
+                        <p class="welcome-hint">Tip: Use <kbd>Ctrl</kbd>+<kbd>P</kbd> to preview and <kbd>Ctrl</kbd>+<kbd>S</kbd> to save while editing.</p>
+                    </div>
                 </div>
             </section>
 
@@ -74,6 +100,9 @@
                     <div class="form-sidebar">
                         <div class="form-progress">
                             <h3>Resume Sections</h3>
+                            <div class="form-progress-bar" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100" aria-label="Form completion">
+                                <div class="form-progress-fill" id="formProgressFill" style="width: 25%"></div>
+                            </div>
                             <div class="progress-steps">
                                 <div class="step active" data-section="personal">
                                     <i class="fas fa-user"></i>
@@ -108,6 +137,7 @@
 
                     <div class="form-content">
                         <form id="resumeFormElement">
+                            <div class="form-sections-viewport">
                             <!-- Personal Information -->
                             <div class="form-section active" data-section="personal">
                                 <h3>Personal Information</h3>
@@ -146,7 +176,8 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="summary">Professional Summary</label>
-                                    <textarea id="summary" name="summary" rows="4" placeholder="Brief overview of your professional background and career objectives..."></textarea>
+                                    <textarea id="summary" name="summary" rows="4" maxlength="500" placeholder="Brief overview of your professional background and career objectives..."></textarea>
+                                    <div class="char-counter" id="summaryCounter">0 / 500</div>
                                 </div>
                             </div>
 
@@ -244,7 +275,23 @@
                                     <div id="languagesContainer"></div>
                                 </div>
                             </div>
+                            </div>
                         </form>
+
+                        <div class="form-navigation">
+                            <button type="button" id="prevSectionBtn" class="btn btn-secondary" disabled>
+                                <i class="fas fa-arrow-left"></i>
+                                Previous
+                            </button>
+                            <div class="form-nav-center">
+                                <div class="step-dots" id="stepDots" role="tablist" aria-label="Form progress"></div>
+                                <span class="progress-indicator" id="sectionIndicator">Step 1 of 4</span>
+                            </div>
+                            <button type="button" id="nextSectionBtn" class="btn btn-primary">
+                                Next
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -258,6 +305,10 @@
                             <button id="editBtn" class="btn btn-secondary">
                                 <i class="fas fa-edit"></i>
                                 Edit
+                            </button>
+                            <button id="printBtn" class="btn btn-secondary">
+                                <i class="fas fa-print"></i>
+                                Print
                             </button>
                             <button id="downloadBtn" class="btn btn-primary">
                                 <i class="fas fa-download"></i>
@@ -276,7 +327,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 Resume Builder. Built with ❤️ for professionals worldwide.</p>
+            <p>&copy; 2026 Resume Builder · Created by Rei</p>
         </div>
     </footer>
 

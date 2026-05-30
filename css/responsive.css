@@ -79,6 +79,22 @@
         display: none;
     }
     
+    .form-nav-center {
+        order: -1;
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-navigation {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .form-navigation .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+
     .form-actions {
         flex-direction: row;
     }
@@ -368,7 +384,9 @@
     /* Ensure resume templates are properly sized for print */
     .template-modern,
     .template-classic,
-    .template-minimal {
+    .template-minimal,
+    .template-executive,
+    .template-creative {
         max-width: none !important;
         width: 100% !important;
         margin: 0 !important;
@@ -422,15 +440,16 @@
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
     }
-    
-    .btn:hover {
-        transform: none;
+
+    .form-section.active,
+    .form-section.enter-from-right,
+    .form-section.enter-from-left {
+        opacity: 1 !important;
+        transform: none !important;
     }
-    
-    .card:hover {
-        transform: none;
-    }
-    
+
+    .btn:hover,
+    .card:hover,
     .template-card:hover {
         transform: none;
     }

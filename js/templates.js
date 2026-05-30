@@ -29,11 +29,31 @@ class TemplateManager {
                 features: ['Minimal Design', 'Content Focus', 'Clean Typography', 'Spacious Layout'],
                 preview: 'minimal-preview.svg',
                 className: 'template-minimal'
+            },
+            executive: {
+                id: 'executive',
+                name: 'Executive Sidebar',
+                description: 'Sophisticated two-column layout with a dark sidebar. Ideal for senior roles and leadership positions.',
+                features: ['Sidebar Layout', 'Gold Accents', 'Skills Highlight', 'Executive Feel'],
+                preview: 'executive-preview.svg',
+                className: 'template-executive'
+            },
+            creative: {
+                id: 'creative',
+                name: 'Creative Timeline',
+                description: 'Bold timeline design with vibrant accents. Perfect for designers, marketers, and creative professionals.',
+                features: ['Timeline Layout', 'Bold Colors', 'Tag Skills', 'Visual Impact'],
+                preview: 'creative-preview.svg',
+                className: 'template-creative'
             }
         };
         
         this.selectedTemplate = null;
         this.init();
+    }
+
+    esc(value) {
+        return Utils.sanitizeHtml(String(value ?? ''));
     }
     
     init() {
@@ -85,27 +105,36 @@ class TemplateManager {
     }
     
     createPreviewPlaceholder(template) {
-        // Create a visual preview based on template style
-        const baseStructure = `
-            <div class="template-preview-placeholder">
-                <div class="preview-header"></div>
-                <div class="preview-line"></div>
-                <div class="preview-line short"></div>
-                <div class="preview-section">
-                    <div class="preview-section-title"></div>
-                    <div class="preview-line medium"></div>
-                    <div class="preview-line"></div>
-                    <div class="preview-line short"></div>
-                </div>
-                <div class="preview-section">
-                    <div class="preview-section-title"></div>
-                    <div class="preview-line"></div>
-                    <div class="preview-line medium"></div>
-                </div>
-            </div>
-        `;
-        
-        return baseStructure;
+        const previews = {
+            classic: `<div class="template-preview-placeholder preview-classic">
+                <div class="preview-header classic"></div>
+                <div class="preview-line"></div><div class="preview-line short"></div>
+                <div class="preview-section"><div class="preview-section-title"></div><div class="preview-line medium"></div></div>
+            </div>`,
+            minimal: `<div class="template-preview-placeholder preview-minimal">
+                <div class="preview-header minimal"></div>
+                <div class="preview-line"></div><div class="preview-line short"></div>
+                <div class="preview-section"><div class="preview-section-title"></div><div class="preview-line"></div></div>
+            </div>`,
+            executive: `<div class="template-preview-placeholder preview-executive">
+                <div class="preview-exec-sidebar"><div class="preview-line short"></div><div class="preview-line"></div><div class="preview-line medium"></div></div>
+                <div class="preview-exec-main"><div class="preview-section-title"></div><div class="preview-line"></div><div class="preview-line medium"></div></div>
+            </div>`,
+            creative: `<div class="template-preview-placeholder preview-creative">
+                <div class="preview-creative-bar"></div>
+                <div class="preview-header creative"></div>
+                <div class="preview-timeline"><div class="preview-dot"></div><div class="preview-line medium"></div></div>
+                <div class="preview-timeline"><div class="preview-dot"></div><div class="preview-line short"></div></div>
+            </div>`
+        };
+
+        if (previews[template.id]) return previews[template.id];
+
+        return `<div class="template-preview-placeholder">
+            <div class="preview-header"></div>
+            <div class="preview-line"></div><div class="preview-line short"></div>
+            <div class="preview-section"><div class="preview-section-title"></div><div class="preview-line medium"></div><div class="preview-line"></div></div>
+        </div>`;
     }
     
     attachEventListeners() {
@@ -141,23 +170,18 @@ class TemplateManager {
         // Update UI
         this.updateTemplateSelection();
         
-        // Navigate to form - check if app is available
-        if (window.app && typeof window.app.navigateToForm === 'function') {
-            window.app.navigateToForm();
-        } else {
-            // Fallback: wait for app to be available
-            const checkApp = () => {
-                if (window.app && typeof window.app.navigateToForm === 'function') {
-                    window.app.navigateToForm();
-                } else {
-                    setTimeout(checkApp, 100);
-                }
-            };
-            checkApp();
-        }
+        document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selecting'));
+        const card = document.querySelector(`.template-card[data-template-id="${templateId}"]`);
+        card?.classList.add('selecting');
         
-        // Store selection in localStorage
         Utils.storage.set('selectedTemplate', templateId);
+        Utils.showToast(`${this.templates[templateId].name} selected`, 'success', 1500);
+        
+        setTimeout(() => {
+            if (window.app && typeof window.app.navigateToForm === 'function') {
+                window.app.navigateToForm();
+            }
+        }, 350);
         
         console.log(`Template selected: ${this.templates[templateId].name}`);
     }
@@ -170,7 +194,7 @@ class TemplateManager {
         
         // Add selection to current template
         if (this.selectedTemplate) {
-            const selectedCard = document.querySelector(`[data-template-id="${this.selectedTemplate}"]`);
+            const selectedCard = document.querySelector(`.template-card[data-template-id="${this.selectedTemplate}"]`);
             if (selectedCard) {
                 selectedCard.classList.add('selected');
             }
@@ -187,7 +211,7 @@ class TemplateManager {
         const previewHtml = this.renderTemplate(templateId, sampleData);
         
         // Show preview modal or navigate to preview
-        this.showPreviewModal(previewHtml, this.templates[templateId].name);
+        this.showPreviewModal(previewHtml, this.templates[templateId].name, templateId);
     }
     
     getSampleData() {
@@ -243,15 +267,14 @@ class TemplateManager {
         };
     }
     
-    showPreviewModal(previewHtml, templateName) {
-        // Create modal overlay
+    showPreviewModal(previewHtml, templateName, templateId) {
         const modal = document.createElement('div');
         modal.className = 'preview-modal';
         modal.innerHTML = `
             <div class="preview-modal-content">
                 <div class="preview-modal-header">
-                    <h3>Preview: ${templateName}</h3>
-                    <button class="btn-close" onclick="this.closest('.preview-modal').remove()">
+                    <h3>Preview: ${this.esc(templateName)}</h3>
+                    <button class="btn-close" aria-label="Close preview">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -259,103 +282,32 @@ class TemplateManager {
                     ${previewHtml}
                 </div>
                 <div class="preview-modal-footer">
-                    <button class="btn btn-secondary" onclick="this.closest('.preview-modal').remove()">
-                        Close
-                    </button>
-                    <button class="btn btn-primary" onclick="templateManager.selectTemplate('${this.templates[templateName.toLowerCase().replace(' ', '-')]?.id || 'modern'}'); this.closest('.preview-modal').remove();">
+                    <button class="btn btn-secondary" data-action="close">Close</button>
+                    <button class="btn btn-primary" data-action="select" data-template-id="${templateId}">
                         Select This Template
                     </button>
                 </div>
             </div>
         `;
-        
-        // Add modal styles
-        const modalStyles = `
-            .preview-modal {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.8);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10000;
-                padding: 2rem;
-            }
-            
-            .preview-modal-content {
-                background: white;
-                border-radius: 12px;
-                max-width: 800px;
-                max-height: 90vh;
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
-            }
-            
-            .preview-modal-header {
-                padding: 1.5rem;
-                border-bottom: 1px solid #e5e7eb;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            
-            .preview-modal-body {
-                flex: 1;
-                overflow: auto;
-                padding: 1rem;
-                background: #f8fafc;
-            }
-            
-            .preview-modal-footer {
-                padding: 1.5rem;
-                border-top: 1px solid #e5e7eb;
-                display: flex;
-                gap: 1rem;
-                justify-content: flex-end;
-            }
-            
-            .btn-close {
-                background: none;
-                border: none;
-                font-size: 1.2rem;
-                cursor: pointer;
-                color: #64748b;
-                padding: 0.5rem;
-                border-radius: 4px;
-            }
-            
-            .btn-close:hover {
-                background: #f1f5f9;
-                color: #374151;
-            }
-        `;
-        
-        // Add styles if not already added
-        if (!document.getElementById('modal-styles')) {
-            const styleSheet = document.createElement('style');
-            styleSheet.id = 'modal-styles';
-            styleSheet.textContent = modalStyles;
-            document.head.appendChild(styleSheet);
-        }
-        
+
         document.body.appendChild(modal);
-        
-        // Close modal on outside click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
+
+        const closeModal = () => modal.remove();
+
+        modal.querySelector('.btn-close').addEventListener('click', closeModal);
+        modal.querySelector('[data-action="close"]').addEventListener('click', closeModal);
+        modal.querySelector('[data-action="select"]').addEventListener('click', (e) => {
+            this.selectTemplate(e.target.dataset.templateId);
+            closeModal();
         });
-        
-        // Close modal on escape key
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
         const handleEscape = (e) => {
             if (e.key === 'Escape') {
-                modal.remove();
+                closeModal();
                 document.removeEventListener('keydown', handleEscape);
             }
         };
@@ -366,20 +318,37 @@ class TemplateManager {
         const template = this.templates[templateId];
         if (!template) return '';
         
+        let html;
         switch (templateId) {
             case 'modern':
-                return this.renderModernTemplate(data);
+                html = this.renderModernTemplate(data);
+                break;
             case 'classic':
-                return this.renderClassicTemplate(data);
+                html = this.renderClassicTemplate(data);
+                break;
             case 'minimal':
-                return this.renderMinimalTemplate(data);
+                html = this.renderMinimalTemplate(data);
+                break;
+            case 'executive':
+                html = this.renderExecutiveTemplate(data);
+                break;
+            case 'creative':
+                html = this.renderCreativeTemplate(data);
+                break;
             default:
-                return this.renderModernTemplate(data);
+                html = this.renderModernTemplate(data);
         }
+
+        return this.wrapWithWatermark(html);
+    }
+
+    wrapWithWatermark(html) {
+        return `<div class="resume-document-root">${html}${Utils.getWatermarkHtml()}</div>`;
     }
     
     renderModernTemplate(data) {
         const { personal, experience, education, skills } = data;
+        const e = (v) => this.esc(v);
         const certifications = data.certifications || [];
         const achievements = data.achievements || [];
         const activities = data.activities || [];
@@ -389,12 +358,12 @@ class TemplateManager {
         return `
             <div class="template-modern">
                 <div class="resume-header">
-                    <h1 class="resume-name">${personal.fullName}</h1>
+                    <h1 class="resume-name">${e(personal.fullName)}</h1>
                     <div class="resume-contact">
-                        ${personal.email ? `<span><i class="fas fa-envelope"></i> ${personal.email}</span>` : ''}
-                        ${personal.phone ? `<span><i class="fas fa-phone"></i> ${personal.phone}</span>` : ''}
-                        ${personal.location ? `<span><i class="fas fa-map-marker-alt"></i> ${personal.location}</span>` : ''}
-                        ${personal.website ? `<span><i class="fas fa-globe"></i> ${personal.website}</span>` : ''}
+                        ${personal.email ? `<span><i class="fas fa-envelope"></i> ${e(personal.email)}</span>` : ''}
+                        ${personal.phone ? `<span><i class="fas fa-phone"></i> ${e(personal.phone)}</span>` : ''}
+                        ${personal.location ? `<span><i class="fas fa-map-marker-alt"></i> ${e(personal.location)}</span>` : ''}
+                        ${personal.website ? `<span><i class="fas fa-globe"></i> ${e(personal.website)}</span>` : ''}
                         ${personal.linkedin ? `<span><i class="fab fa-linkedin"></i> LinkedIn</span>` : ''}
                     </div>
                 </div>
@@ -403,7 +372,7 @@ class TemplateManager {
                     ${personal.summary ? `
                         <div class="resume-section">
                             <h2 class="section-title">Professional Summary</h2>
-                            <p>${personal.summary}</p>
+                            <p>${e(personal.summary)}</p>
                         </div>
                     ` : ''}
                     
@@ -414,14 +383,14 @@ class TemplateManager {
                                 <div class="experience-item">
                                     <div class="item-header">
                                         <div>
-                                            <div class="item-title">${exp.title}</div>
-                                            <div class="item-company">${exp.company}${exp.location ? `, ${exp.location}` : ''}</div>
+                                            <div class="item-title">${e(exp.title)}</div>
+                                            <div class="item-company">${e(exp.company)}${exp.location ? `, ${e(exp.location)}` : ''}</div>
                                         </div>
                                         <div class="item-date">
                                             ${this.formatDate(exp.startDate)} - ${exp.current ? 'Present' : this.formatDate(exp.endDate)}
                                         </div>
                                     </div>
-                                    ${exp.description ? `<p>${exp.description}</p>` : ''}
+                                    ${exp.description ? `<p>${e(exp.description)}</p>` : ''}
                                 </div>
                             `).join('')}
                         </div>
@@ -434,15 +403,15 @@ class TemplateManager {
                                 <div class="education-item">
                                     <div class="item-header">
                                         <div>
-                                            <div class="item-title">${edu.degree}</div>
-                                            <div class="item-company">${edu.school}${edu.location ? `, ${edu.location}` : ''}</div>
+                                            <div class="item-title">${e(edu.degree)}</div>
+                                            <div class="item-company">${e(edu.school)}${edu.location ? `, ${e(edu.location)}` : ''}</div>
                                         </div>
                                         <div class="item-date">
                                             ${this.formatDate(edu.startDate)} - ${this.formatDate(edu.endDate)}
                                         </div>
                                     </div>
-                                    ${edu.gpa ? `<p>GPA: ${edu.gpa}</p>` : ''}
-                                    ${edu.description ? `<p>${edu.description}</p>` : ''}
+                                    ${edu.gpa ? `<p>GPA: ${e(edu.gpa)}</p>` : ''}
+                                    ${edu.description ? `<p>${e(edu.description)}</p>` : ''}
                                 </div>
                             `).join('')}
                         </div>
@@ -454,8 +423,8 @@ class TemplateManager {
                             <div class="skills-grid">
                                 ${skills.map(skill => `
                                     <div class="skill-item">
-                                        <strong>${skill.name}</strong>
-                                        ${skill.level ? ` - ${skill.level}` : ''}
+                                        <strong>${e(skill.name)}</strong>
+                                        ${skill.level ? ` - ${e(skill.level)}` : ''}
                                     </div>
                                 `).join('')}
                             </div>
@@ -469,12 +438,12 @@ class TemplateManager {
                                 <div class="list-item">
                                     <div class="item-header">
                                         <div>
-                                            <div class="item-title">${p.title}</div>
-                                            ${p.role ? `<div class=\"item-company\">${p.role}</div>` : ''}
+                                            <div class="item-title">${e(p.title)}</div>
+                                            ${p.role ? `<div class="item-company">${e(p.role)}</div>` : ''}
                                         </div>
-                                        <div class="item-date">${p.duration || ''}</div>
+                                        <div class="item-date">${e(p.duration || '')}</div>
                                     </div>
-                                    ${p.description ? `<p>${p.description}</p>` : ''}
+                                    ${p.description ? `<p>${e(p.description)}</p>` : ''}
                                 </div>
                             `).join('')}
                         </div>
@@ -486,10 +455,10 @@ class TemplateManager {
                             ${certifications.map(c => `
                                 <div class="list-item">
                                     <div class="item-header">
-                                        <div class="item-title">${c.name}</div>
-                                        <div class="item-date">${c.year || ''}</div>
+                                        <div class="item-title">${e(c.name)}</div>
+                                        <div class="item-date">${e(c.year || '')}</div>
                                     </div>
-                                    ${c.issuer ? `<p>Issuer: ${c.issuer}</p>` : ''}
+                                    ${c.issuer ? `<p>Issuer: ${e(c.issuer)}</p>` : ''}
                                 </div>
                             `).join('')}
                         </div>
@@ -500,8 +469,8 @@ class TemplateManager {
                             <h2 class="section-title">Achievements</h2>
                             ${achievements.map(a => `
                                 <div class="list-item">
-                                    <div class="item-title">${a.title}</div>
-                                    ${a.description ? `<p>${a.description}</p>` : ''}
+                                    <div class="item-title">${e(a.title)}</div>
+                                    ${a.description ? `<p>${e(a.description)}</p>` : ''}
                                 </div>
                             `).join('')}
                         </div>
@@ -512,8 +481,8 @@ class TemplateManager {
                             <h2 class="section-title">Extracurricular Activities</h2>
                             ${activities.map(a => `
                                 <div class="list-item">
-                                    <div class="item-title">${a.title}</div>
-                                    ${a.description ? `<p>${a.description}</p>` : ''}
+                                    <div class="item-title">${e(a.title)}</div>
+                                    ${a.description ? `<p>${e(a.description)}</p>` : ''}
                                 </div>
                             `).join('')}
                         </div>
@@ -524,7 +493,7 @@ class TemplateManager {
                             <h2 class="section-title">Languages</h2>
                             <div class="skills-grid">
                                 ${languages.map(l => `
-                                    <div class="skill-item"><strong>${l.name}</strong>${l.proficiency ? ` - ${l.proficiency}` : ''}</div>
+                                    <div class="skill-item"><strong>${e(l.name)}</strong>${l.proficiency ? ` - ${e(l.proficiency)}` : ''}</div>
                                 `).join('')}
                             </div>
                         </div>
@@ -536,6 +505,7 @@ class TemplateManager {
     
     renderClassicTemplate(data) {
         const { personal, experience, education, skills } = data;
+        const e = (v) => this.esc(v);
         const certifications = data.certifications || [];
         const achievements = data.achievements || [];
         const activities = data.activities || [];
@@ -545,19 +515,19 @@ class TemplateManager {
         return `
             <div class="template-classic">
                 <div class="resume-header">
-                    <h1 class="resume-name">${personal.fullName}</h1>
+                    <h1 class="resume-name">${e(personal.fullName)}</h1>
                     <div class="resume-contact">
-                        ${personal.email ? `<span>${personal.email}</span>` : ''}
-                        ${personal.phone ? `<span>${personal.phone}</span>` : ''}
-                        ${personal.location ? `<span>${personal.location}</span>` : ''}
-                        ${personal.website ? `<span>${personal.website}</span>` : ''}
+                        ${personal.email ? `<span>${e(personal.email)}</span>` : ''}
+                        ${personal.phone ? `<span>${e(personal.phone)}</span>` : ''}
+                        ${personal.location ? `<span>${e(personal.location)}</span>` : ''}
+                        ${personal.website ? `<span>${e(personal.website)}</span>` : ''}
                     </div>
                 </div>
                 
                 ${personal.summary ? `
                     <div class="resume-section">
                         <h2 class="section-title">Summary</h2>
-                        <p>${personal.summary}</p>
+                        <p>${e(personal.summary)}</p>
                     </div>
                 ` : ''}
                 
@@ -567,13 +537,13 @@ class TemplateManager {
                         ${experience.map(exp => `
                             <div class="experience-item">
                                 <div class="item-header">
-                                    <span class="item-title">${exp.title}</span>
-                                    <span class="item-company">${exp.company}</span>
+                                    <span class="item-title">${e(exp.title)}</span>
+                                    <span class="item-company">${e(exp.company)}</span>
                                     <span class="item-date">
                                         ${this.formatDate(exp.startDate)} - ${exp.current ? 'Present' : this.formatDate(exp.endDate)}
                                     </span>
                                 </div>
-                                ${exp.description ? `<p>${exp.description}</p>` : ''}
+                                ${exp.description ? `<p>${e(exp.description)}</p>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -585,14 +555,14 @@ class TemplateManager {
                         ${education.map(edu => `
                             <div class="education-item">
                                 <div class="item-header">
-                                    <span class="item-title">${edu.degree}</span>
-                                    <span class="item-company">${edu.school}</span>
+                                    <span class="item-title">${e(edu.degree)}</span>
+                                    <span class="item-company">${e(edu.school)}</span>
                                     <span class="item-date">
                                         ${this.formatDate(edu.startDate)} - ${this.formatDate(edu.endDate)}
                                     </span>
                                 </div>
-                                ${edu.gpa ? `<p>GPA: ${edu.gpa}</p>` : ''}
-                                ${edu.description ? `<p>${edu.description}</p>` : ''}
+                                ${edu.gpa ? `<p>GPA: ${e(edu.gpa)}</p>` : ''}
+                                ${edu.description ? `<p>${e(edu.description)}</p>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -603,7 +573,7 @@ class TemplateManager {
                         <h2 class="section-title">Skills</h2>
                         <div class="skills-list">
                             ${skills.map(skill => `
-                                <div class="skill-item">${skill.name}${skill.level ? ` (${skill.level})` : ''}</div>
+                                <div class="skill-item">${e(skill.name)}${skill.level ? ` (${e(skill.level)})` : ''}</div>
                             `).join('')}
                         </div>
                     </div>
@@ -613,10 +583,10 @@ class TemplateManager {
                         <h2 class="section-title">Projects</h2>
                         ${projects.map(p => `
                             <div class="list-item">
-                                <span class="item-title">${p.title}</span>
-                                ${p.role ? ` - ${p.role}` : ''}
-                                ${p.duration ? ` <span class=\"item-date\">(${p.duration})</span>` : ''}
-                                ${p.description ? `<div><small>${p.description}</small></div>` : ''}
+                                <span class="item-title">${e(p.title)}</span>
+                                ${p.role ? ` - ${e(p.role)}` : ''}
+                                ${p.duration ? ` <span class="item-date">(${e(p.duration)})</span>` : ''}
+                                ${p.description ? `<div><small>${e(p.description)}</small></div>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -625,7 +595,7 @@ class TemplateManager {
                     <div class="resume-section">
                         <h2 class="section-title">Certifications</h2>
                         ${certifications.map(c => `
-                            <div class="list-item"><span class="item-title">${c.name}</span>${c.year ? ` - ${c.year}` : ''}${c.issuer ? `, ${c.issuer}` : ''}</div>
+                            <div class="list-item"><span class="item-title">${e(c.name)}</span>${c.year ? ` - ${e(c.year)}` : ''}${c.issuer ? `, ${e(c.issuer)}` : ''}</div>
                         `).join('')}
                     </div>
                 ` : ''}
@@ -633,7 +603,7 @@ class TemplateManager {
                     <div class="resume-section">
                         <h2 class="section-title">Achievements</h2>
                         ${achievements.map(a => `
-                            <div class="list-item"><span class="item-title">${a.title}</span>${a.description ? ` - ${a.description}` : ''}</div>
+                            <div class="list-item"><span class="item-title">${e(a.title)}</span>${a.description ? ` - ${e(a.description)}` : ''}</div>
                         `).join('')}
                     </div>
                 ` : ''}
@@ -641,7 +611,7 @@ class TemplateManager {
                     <div class="resume-section">
                         <h2 class="section-title">Extracurricular Activities</h2>
                         ${activities.map(a => `
-                            <div class="list-item"><span class="item-title">${a.title}</span>${a.description ? ` - ${a.description}` : ''}</div>
+                            <div class="list-item"><span class="item-title">${e(a.title)}</span>${a.description ? ` - ${e(a.description)}` : ''}</div>
                         `).join('')}
                     </div>
                 ` : ''}
@@ -649,7 +619,7 @@ class TemplateManager {
                     <div class="resume-section">
                         <h2 class="section-title">Languages</h2>
                         <div class="skills-list">
-                            ${languages.map(l => `<div class="skill-item">${l.name}${l.proficiency ? ` (${l.proficiency})` : ''}</div>`).join('')}
+                            ${languages.map(l => `<div class="skill-item">${e(l.name)}${l.proficiency ? ` (${e(l.proficiency)})` : ''}</div>`).join('')}
                         </div>
                     </div>
                 ` : ''}
@@ -659,6 +629,7 @@ class TemplateManager {
     
     renderMinimalTemplate(data) {
         const { personal, experience, education, skills } = data;
+        const e = (v) => this.esc(v);
         const certifications = data.certifications || [];
         const achievements = data.achievements || [];
         const activities = data.activities || [];
@@ -668,19 +639,19 @@ class TemplateManager {
         return `
             <div class="template-minimal">
                 <div class="resume-header">
-                    <h1 class="resume-name">${personal.fullName}</h1>
+                    <h1 class="resume-name">${e(personal.fullName)}</h1>
                     <div class="resume-contact">
-                        ${personal.email ? `<span>${personal.email}</span>` : ''}
-                        ${personal.phone ? `<span>${personal.phone}</span>` : ''}
-                        ${personal.location ? `<span>${personal.location}</span>` : ''}
-                        ${personal.website ? `<span>${personal.website}</span>` : ''}
+                        ${personal.email ? `<span>${e(personal.email)}</span>` : ''}
+                        ${personal.phone ? `<span>${e(personal.phone)}</span>` : ''}
+                        ${personal.location ? `<span>${e(personal.location)}</span>` : ''}
+                        ${personal.website ? `<span>${e(personal.website)}</span>` : ''}
                     </div>
                 </div>
                 
                 ${personal.summary ? `
                     <div class="resume-section">
                         <h2 class="section-title">About</h2>
-                        <p>${personal.summary}</p>
+                        <p>${e(personal.summary)}</p>
                     </div>
                 ` : ''}
                 
@@ -689,12 +660,12 @@ class TemplateManager {
                         <h2 class="section-title">Experience</h2>
                         ${experience.map(exp => `
                             <div class="experience-item">
-                                <div class="item-title">${exp.title}</div>
-                                <div class="item-company">${exp.company}${exp.location ? `, ${exp.location}` : ''}</div>
+                                <div class="item-title">${e(exp.title)}</div>
+                                <div class="item-company">${e(exp.company)}${exp.location ? `, ${e(exp.location)}` : ''}</div>
                                 <div class="item-date">
                                     ${this.formatDate(exp.startDate)} - ${exp.current ? 'Present' : this.formatDate(exp.endDate)}
                                 </div>
-                                ${exp.description ? `<p>${exp.description}</p>` : ''}
+                                ${exp.description ? `<p>${e(exp.description)}</p>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -705,13 +676,13 @@ class TemplateManager {
                         <h2 class="section-title">Education</h2>
                         ${education.map(edu => `
                             <div class="education-item">
-                                <div class="item-title">${edu.degree}</div>
-                                <div class="item-company">${edu.school}${edu.location ? `, ${edu.location}` : ''}</div>
+                                <div class="item-title">${e(edu.degree)}</div>
+                                <div class="item-company">${e(edu.school)}${edu.location ? `, ${e(edu.location)}` : ''}</div>
                                 <div class="item-date">
                                     ${this.formatDate(edu.startDate)} - ${this.formatDate(edu.endDate)}
                                 </div>
-                                ${edu.gpa ? `<p>GPA: ${edu.gpa}</p>` : ''}
-                                ${edu.description ? `<p>${edu.description}</p>` : ''}
+                                ${edu.gpa ? `<p>GPA: ${e(edu.gpa)}</p>` : ''}
+                                ${edu.description ? `<p>${e(edu.description)}</p>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -722,7 +693,7 @@ class TemplateManager {
                         <h2 class="section-title">Skills</h2>
                         <div class="skills-grid">
                             ${skills.map(skill => `
-                                <span class="skill-item">${skill.name}</span>
+                                <span class="skill-item">${e(skill.name)}</span>
                             `).join('')}
                         </div>
                     </div>
@@ -732,10 +703,10 @@ class TemplateManager {
                         <h2 class="section-title">Projects</h2>
                         ${projects.map(p => `
                             <div class="list-item">
-                                <div class="item-title">${p.title}</div>
-                                ${p.role ? `<div class=\"item-company\">${p.role}</div>` : ''}
-                                ${p.duration ? `<div class=\"item-date\">${p.duration}</div>` : ''}
-                                ${p.description ? `<p>${p.description}</p>` : ''}
+                                <div class="item-title">${e(p.title)}</div>
+                                ${p.role ? `<div class="item-company">${e(p.role)}</div>` : ''}
+                                ${p.duration ? `<div class="item-date">${e(p.duration)}</div>` : ''}
+                                ${p.description ? `<p>${e(p.description)}</p>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -745,8 +716,8 @@ class TemplateManager {
                         <h2 class="section-title">Certifications</h2>
                         ${certifications.map(c => `
                             <div class="list-item">
-                                <div class="item-title">${c.name}</div>
-                                ${c.year || c.issuer ? `<div class="item-company">${[c.year, c.issuer].filter(Boolean).join(' - ')}</div>` : ''}
+                                <div class="item-title">${e(c.name)}</div>
+                                ${c.year || c.issuer ? `<div class="item-company">${[c.year, c.issuer].filter(Boolean).map(v => e(v)).join(' - ')}</div>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -756,8 +727,8 @@ class TemplateManager {
                         <h2 class="section-title">Achievements</h2>
                         ${achievements.map(a => `
                             <div class="list-item">
-                                <div class="item-title">${a.title}</div>
-                                ${a.description ? `<p>${a.description}</p>` : ''}
+                                <div class="item-title">${e(a.title)}</div>
+                                ${a.description ? `<p>${e(a.description)}</p>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -767,8 +738,8 @@ class TemplateManager {
                         <h2 class="section-title">Extracurricular Activities</h2>
                         ${activities.map(a => `
                             <div class="list-item">
-                                <div class="item-title">${a.title}</div>
-                                ${a.description ? `<p>${a.description}</p>` : ''}
+                                <div class="item-title">${e(a.title)}</div>
+                                ${a.description ? `<p>${e(a.description)}</p>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -777,10 +748,239 @@ class TemplateManager {
                     <div class="resume-section">
                         <h2 class="section-title">Languages</h2>
                         <div class="skills-grid">
-                            ${languages.map(l => `<span class="skill-item">${l.name}${l.proficiency ? ` (${l.proficiency})` : ''}</span>`).join('')}
+                            ${languages.map(l => `<span class="skill-item">${e(l.name)}${l.proficiency ? ` (${e(l.proficiency)})` : ''}</span>`).join('')}
                         </div>
                     </div>
                 ` : ''}
+            </div>
+        `;
+    }
+
+    buildSupplementalSections(data, e, layout = 'default') {
+        const projects = data.projects || [];
+        const certifications = data.certifications || [];
+        const achievements = data.achievements || [];
+        const activities = data.activities || [];
+        const languages = data.languages || [];
+        let html = '';
+
+        if (projects.length > 0) {
+            html += `<div class="resume-section"><h2 class="section-title">Projects</h2>`;
+            html += projects.map(p => `
+                <div class="list-item">
+                    <div class="item-header">
+                        <div><div class="item-title">${e(p.title)}</div>${p.role ? `<div class="item-company">${e(p.role)}</div>` : ''}</div>
+                        <div class="item-date">${e(p.duration || '')}</div>
+                    </div>
+                    ${p.description ? `<p>${e(p.description)}</p>` : ''}
+                </div>
+            `).join('');
+            html += `</div>`;
+        }
+
+        if (certifications.length > 0) {
+            html += `<div class="resume-section"><h2 class="section-title">Certifications</h2>`;
+            html += certifications.map(c => `
+                <div class="list-item">
+                    <div class="item-header">
+                        <div class="item-title">${e(c.name)}</div>
+                        <div class="item-date">${e(c.year || '')}</div>
+                    </div>
+                    ${c.issuer ? `<p>${e(c.issuer)}</p>` : ''}
+                </div>
+            `).join('');
+            html += `</div>`;
+        }
+
+        if (achievements.length > 0) {
+            html += `<div class="resume-section"><h2 class="section-title">Achievements</h2>`;
+            html += achievements.map(a => `
+                <div class="list-item">
+                    <div class="item-title">${e(a.title)}</div>
+                    ${a.description ? `<p>${e(a.description)}</p>` : ''}
+                </div>
+            `).join('');
+            html += `</div>`;
+        }
+
+        if (activities.length > 0) {
+            html += `<div class="resume-section"><h2 class="section-title">Activities</h2>`;
+            html += activities.map(a => `
+                <div class="list-item">
+                    <div class="item-title">${e(a.title)}</div>
+                    ${a.description ? `<p>${e(a.description)}</p>` : ''}
+                </div>
+            `).join('');
+            html += `</div>`;
+        }
+
+        if (languages.length > 0 && layout !== 'sidebar') {
+            html += `<div class="resume-section"><h2 class="section-title">Languages</h2><div class="skills-grid">`;
+            html += languages.map(l => `
+                <div class="skill-item"><strong>${e(l.name)}</strong>${l.proficiency ? ` — ${e(l.proficiency)}` : ''}</div>
+            `).join('');
+            html += `</div></div>`;
+        }
+
+        return html;
+    }
+
+    renderExecutiveTemplate(data) {
+        const { personal, experience, education, skills } = data;
+        const e = (v) => this.esc(v);
+        const languages = data.languages || [];
+
+        const sidebarSkills = skills.length > 0 ? `
+            <div class="exec-block">
+                <h2 class="exec-block-title">Skills</h2>
+                ${skills.map(s => `
+                    <div class="exec-skill">
+                        <span class="exec-skill-name">${e(s.name)}</span>
+                        ${s.level ? `<span class="exec-skill-level">${e(s.level)}</span>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        ` : '';
+
+        const sidebarLangs = languages.length > 0 ? `
+            <div class="exec-block">
+                <h2 class="exec-block-title">Languages</h2>
+                ${languages.map(l => `<div class="exec-lang">${e(l.name)}${l.proficiency ? ` · ${e(l.proficiency)}` : ''}</div>`).join('')}
+            </div>
+        ` : '';
+
+        return `
+            <div class="template-executive">
+                <div class="exec-layout">
+                    <aside class="exec-sidebar">
+                        <h1 class="exec-name">${e(personal.fullName)}</h1>
+                        <div class="exec-divider"></div>
+                        <div class="exec-contact">
+                            ${personal.email ? `<div><i class="fas fa-envelope"></i> ${e(personal.email)}</div>` : ''}
+                            ${personal.phone ? `<div><i class="fas fa-phone"></i> ${e(personal.phone)}</div>` : ''}
+                            ${personal.location ? `<div><i class="fas fa-map-marker-alt"></i> ${e(personal.location)}</div>` : ''}
+                            ${personal.website ? `<div><i class="fas fa-globe"></i> ${e(personal.website)}</div>` : ''}
+                            ${personal.linkedin ? `<div><i class="fab fa-linkedin"></i> LinkedIn</div>` : ''}
+                        </div>
+                        ${sidebarSkills}
+                        ${sidebarLangs}
+                    </aside>
+                    <main class="exec-main">
+                        ${personal.summary ? `
+                            <div class="resume-section">
+                                <h2 class="section-title">Profile</h2>
+                                <p>${e(personal.summary)}</p>
+                            </div>
+                        ` : ''}
+                        ${experience.length > 0 ? `
+                            <div class="resume-section">
+                                <h2 class="section-title">Experience</h2>
+                                ${experience.map(exp => `
+                                    <div class="experience-item">
+                                        <div class="item-header">
+                                            <div>
+                                                <div class="item-title">${e(exp.title)}</div>
+                                                <div class="item-company">${e(exp.company)}${exp.location ? ` · ${e(exp.location)}` : ''}</div>
+                                            </div>
+                                            <div class="item-date">${this.formatDate(exp.startDate)} – ${exp.current ? 'Present' : this.formatDate(exp.endDate)}</div>
+                                        </div>
+                                        ${exp.description ? `<p>${e(exp.description)}</p>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        ${education.length > 0 ? `
+                            <div class="resume-section">
+                                <h2 class="section-title">Education</h2>
+                                ${education.map(edu => `
+                                    <div class="education-item">
+                                        <div class="item-header">
+                                            <div>
+                                                <div class="item-title">${e(edu.degree)}</div>
+                                                <div class="item-company">${e(edu.school)}</div>
+                                            </div>
+                                            <div class="item-date">${this.formatDate(edu.startDate)} – ${this.formatDate(edu.endDate)}</div>
+                                        </div>
+                                        ${edu.gpa ? `<p class="exec-gpa">GPA: ${e(edu.gpa)}</p>` : ''}
+                                        ${edu.description ? `<p>${e(edu.description)}</p>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        ${this.buildSupplementalSections(data, e, 'sidebar')}
+                    </main>
+                </div>
+            </div>
+        `;
+    }
+
+    renderCreativeTemplate(data) {
+        const { personal, experience, education, skills } = data;
+        const e = (v) => this.esc(v);
+
+        const skillTags = skills.length > 0 ? `
+            <div class="resume-section">
+                <h2 class="section-title">Skills</h2>
+                <div class="creative-tags">
+                    ${skills.map(s => `<span class="creative-tag">${e(s.name)}${s.level ? `<small>${e(s.level)}</small>` : ''}</span>`).join('')}
+                </div>
+            </div>
+        ` : '';
+
+        const timeline = experience.length > 0 ? `
+            <div class="resume-section">
+                <h2 class="section-title">Experience</h2>
+                <div class="creative-timeline">
+                    ${experience.map(exp => `
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">${this.formatDate(exp.startDate)} – ${exp.current ? 'Present' : this.formatDate(exp.endDate)}</div>
+                                <div class="item-title">${e(exp.title)}</div>
+                                <div class="item-company">${e(exp.company)}${exp.location ? ` · ${e(exp.location)}` : ''}</div>
+                                ${exp.description ? `<p>${e(exp.description)}</p>` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
+
+        return `
+            <div class="template-creative">
+                <header class="creative-header">
+                    <div class="creative-accent-bar"></div>
+                    <h1 class="creative-name">${e(personal.fullName)}</h1>
+                    <div class="creative-contact">
+                        ${personal.email ? `<span>${e(personal.email)}</span>` : ''}
+                        ${personal.phone ? `<span>${e(personal.phone)}</span>` : ''}
+                        ${personal.location ? `<span>${e(personal.location)}</span>` : ''}
+                        ${personal.website ? `<span>${e(personal.website)}</span>` : ''}
+                    </div>
+                </header>
+                ${personal.summary ? `
+                    <div class="creative-summary">
+                        <p>${e(personal.summary)}</p>
+                    </div>
+                ` : ''}
+                ${timeline}
+                ${education.length > 0 ? `
+                    <div class="resume-section">
+                        <h2 class="section-title">Education</h2>
+                        <div class="creative-edu-grid">
+                            ${education.map(edu => `
+                                <div class="creative-edu-card">
+                                    <div class="item-title">${e(edu.degree)}</div>
+                                    <div class="item-company">${e(edu.school)}</div>
+                                    <div class="item-date">${this.formatDate(edu.startDate)} – ${this.formatDate(edu.endDate)}</div>
+                                    ${edu.gpa ? `<p>GPA: ${e(edu.gpa)}</p>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                ${skillTags}
+                ${this.buildSupplementalSections(data, e)}
             </div>
         `;
     }

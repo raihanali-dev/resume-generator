@@ -27,6 +27,8 @@ class FormHandler {
         };
         
         this.currentSection = 'personal';
+        this.sections = ['personal', 'experience', 'education', 'skills'];
+        this.sectionAnimating = false;
         this.autoSaveTimeout = null;
         this.init();
     }
@@ -37,19 +39,43 @@ class FormHandler {
         this.setupAutoSave();
         this.initializeDynamicSections();
         this.applyUserTypeUI();
+        this.initStepDots();
+        this.updateSectionNav();
+        this.updateProgress();
+    }
+
+    initStepDots() {
+        const container = document.getElementById('stepDots');
+        if (!container) return;
+        container.innerHTML = this.sections.map((section, i) =>
+            `<button type="button" class="step-dot${i === 0 ? ' active' : ''}" data-section="${section}" aria-label="Go to ${section} section" role="tab"></button>`
+        ).join('');
+
+        container.querySelectorAll('.step-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                const section = dot.dataset.section;
+                const dir = this.sections.indexOf(section) - this.sections.indexOf(this.currentSection);
+                this.navigateToSection(section, { direction: dir, skipValidation: dir <= 0 });
+            });
+        });
     }
     
     attachEventListeners() {
         // Section navigation
-        document.querySelectorAll('.step').forEach(step => {
+        document.querySelectorAll('.progress-steps .step').forEach(step => {
             step.addEventListener('click', (e) => {
                 const section = e.currentTarget.dataset.section;
-                this.navigateToSection(section);
+                const dir = this.sections.indexOf(section) - this.sections.indexOf(this.currentSection);
+                this.navigateToSection(section, { direction: dir, skipValidation: dir <= 0 });
             });
         });
         
         // Form input changes
-        document.getElementById('resumeFormElement').addEventListener('input', (e) => {
+        const formEl = document.getElementById('resumeFormElement');
+        formEl.addEventListener('input', (e) => {
+            this.handleInputChange(e);
+        });
+        formEl.addEventListener('change', (e) => {
             this.handleInputChange(e);
         });
         
@@ -102,6 +128,24 @@ class FormHandler {
         document.getElementById('generatePdfBtn').addEventListener('click', () => {
             this.generatePDF();
         });
+
+        // Section navigation
+        document.getElementById('prevSectionBtn')?.addEventListener('click', () => {
+            this.navigateSection(-1);
+        });
+        document.getElementById('nextSectionBtn')?.addEventListener('click', () => {
+            const currentIndex = this.sections.indexOf(this.currentSection);
+            if (currentIndex === this.sections.length - 1) {
+                this.previewResume();
+            } else {
+                this.navigateSection(1);
+            }
+        });
+        
+        // Summary character counter
+        const summaryEl = document.getElementById('summary');
+        summaryEl?.addEventListener('input', () => this.updateCharCounter());
+        this.updateCharCounter();
     }
     
     setupAutoSave() {
@@ -113,17 +157,26 @@ class FormHandler {
     }
     
     handleInputChange(e) {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
+        const fieldValue = type === 'checkbox' ? e.target.checked : value;
         
         // Update form data
-        this.updateFormData(name, value, e.target);
+        this.updateFormData(name, fieldValue, e.target);
         
-        // Validate field
-        this.validateField(e.target);
+        // Validate field (skip checkboxes for required validation)
+        if (type !== 'checkbox') {
+            this.validateField(e.target);
+        }
         
         // Trigger auto-save
         this.showAutoSaveIndicator('saving');
         this.autoSaveHandler();
+
+        if (name === 'summary') {
+            this.updateCharCounter();
+        }
+
+        this.updateProgress();
     }
     
     updateFormData(name, value, element) {
@@ -285,28 +338,209 @@ class FormHandler {
         errorContainer.appendChild(errorDiv);
     }
     
-    navigateToSection(sectionName) {
-        // Update current section
-        this.currentSection = sectionName;
-        
-        // Update step indicators
-        document.querySelectorAll('.step').forEach(step => {
-            step.classList.remove('active');
+    navigateToSection(sectionName, options = {}) {
+        if (!this.sections.includes(sectionName) || sectionName === this.currentSection || this.sectionAnimating) {
+            return;
+        }
+
+        const { direction = 0, skipValidation = false } = options;
+        const currentIndex = this.sections.indexOf(this.currentSection);
+        const targetIndex = this.sections.indexOf(sectionName);
+        const dir = direction || (targetIndex - currentIndex);
+
+        if (dir > 0 && !skipValidation && !this.validateCurrentSection()) {
+            return;
+        }
+
+        const outgoing = document.querySelector('.form-section.active');
+        const incoming = document.querySelector(`.form-section[data-section="${sectionName}"]`);
+
+        const applyNavState = () => {
+            this.currentSection = sectionName;
+
+            document.querySelectorAll('.progress-steps .step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.querySelector(`.progress-steps .step[data-section="${sectionName}"]`)?.classList.add('active');
+
+            this.updateSectionNav();
+            this.updateProgress();
+            this.focusSectionFirstField(sectionName);
+        };
+
+        if (outgoing && incoming && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            this.sectionAnimating = true;
+            outgoing.classList.add(dir > 0 ? 'exit-to-left' : 'exit-to-right');
+
+            setTimeout(() => {
+                outgoing.classList.remove('active', 'exit-to-left', 'exit-to-right');
+                incoming.classList.add('active', dir > 0 ? 'enter-from-right' : 'enter-from-left');
+
+                applyNavState();
+
+                setTimeout(() => {
+                    incoming.classList.remove('enter-from-right', 'enter-from-left');
+                    this.sectionAnimating = false;
+                }, 400);
+            }, 260);
+        } else {
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.classList.remove('active', 'enter-from-right', 'enter-from-left', 'exit-to-left', 'exit-to-right');
+            });
+            incoming?.classList.add('active');
+            applyNavState();
+        }
+    }
+
+    navigateSection(direction) {
+        if (direction > 0 && !this.validateCurrentSection()) return;
+
+        const currentIndex = this.sections.indexOf(this.currentSection);
+        const nextIndex = currentIndex + direction;
+
+        if (nextIndex >= 0 && nextIndex < this.sections.length) {
+            this.navigateToSection(this.sections[nextIndex], { direction });
+        }
+    }
+
+    validateCurrentSection() {
+        const errors = [];
+
+        switch (this.currentSection) {
+            case 'personal':
+                ['fullName', 'email'].forEach(name => {
+                    const el = document.querySelector(`[name="${name}"]`);
+                    if (el) this.validateField(el);
+                });
+                if (!this.formData.personal.fullName.trim()) errors.push('Full name is required');
+                if (!this.formData.personal.email.trim()) errors.push('Email is required');
+                else if (!Utils.isValidEmail(this.formData.personal.email)) errors.push('Enter a valid email');
+                break;
+            case 'experience':
+                this.formData.experience.forEach((exp, i) => {
+                    const partial = exp.title.trim() || exp.company.trim();
+                    if (partial && (!exp.title.trim() || !exp.company.trim())) {
+                        errors.push(`Experience ${i + 1}: job title and company are both required`);
+                    }
+                });
+                break;
+            case 'education':
+                this.formData.education.forEach((edu, i) => {
+                    const partial = edu.degree.trim() || edu.school.trim();
+                    if (partial && (!edu.degree.trim() || !edu.school.trim())) {
+                        errors.push(`Education ${i + 1}: degree and school are both required`);
+                    }
+                });
+                break;
+            case 'skills':
+                break;
+        }
+
+        if (errors.length > 0) {
+            Utils.showToast(errors.join('\n• '), 'warning', 4500);
+            this.scrollToFirstError();
+            return false;
+        }
+        return true;
+    }
+
+    scrollToFirstError() {
+        const section = document.querySelector(`.form-section[data-section="${this.currentSection}"]`);
+        const errorField = section?.querySelector('.form-group.error input, .form-group.error textarea, .form-group.error select')
+            || section?.querySelector('[required]:invalid, [required][value=""]');
+        if (errorField) {
+            errorField.focus({ preventScroll: true });
+            Utils.scrollTo(errorField, { block: 'center' });
+        }
+    }
+
+    focusSectionFirstField(sectionName) {
+        setTimeout(() => {
+            const section = document.querySelector(`.form-section[data-section="${sectionName}"]`);
+            const field = section?.querySelector(
+                'input:not([type="radio"]):not([type="checkbox"]):not([disabled]), textarea, select'
+            );
+            field?.focus({ preventScroll: true });
+        }, 420);
+    }
+
+    updateSectionNav() {
+        const currentIndex = this.sections.indexOf(this.currentSection);
+        const prevBtn = document.getElementById('prevSectionBtn');
+        const nextBtn = document.getElementById('nextSectionBtn');
+        const indicator = document.getElementById('sectionIndicator');
+
+        if (prevBtn) prevBtn.disabled = currentIndex === 0;
+        if (nextBtn) {
+            nextBtn.innerHTML = currentIndex === this.sections.length - 1
+                ? '<i class="fas fa-eye"></i> Preview'
+                : 'Next <i class="fas fa-arrow-right"></i>';
+        }
+        if (indicator) {
+            indicator.textContent = `Step ${currentIndex + 1} of ${this.sections.length}`;
+        }
+
+        document.querySelectorAll('.step-dot').forEach((dot, i) => {
+            const section = this.sections[i];
+            dot.classList.toggle('active', i === currentIndex);
+            dot.classList.toggle('completed', i !== currentIndex && this.isSectionComplete(section));
         });
-        document.querySelector(`[data-section="${sectionName}"]`).classList.add('active');
-        
-        // Show/hide form sections
-        document.querySelectorAll('.form-section').forEach(section => {
-            section.classList.remove('active');
+    }
+
+    updateProgress() {
+        const { personal, experience, education, skills } = this.formData;
+        let score = 0;
+
+        if (personal.fullName.trim()) score += 15;
+        if (personal.email.trim() && Utils.isValidEmail(personal.email)) score += 15;
+        if (personal.summary.trim()) score += 10;
+        if (experience.some(e => e.title.trim() && e.company.trim())) score += 20;
+        if (education.some(e => e.degree.trim() && e.school.trim())) score += 20;
+        if (skills.some(s => s.name.trim())) score += 20;
+
+        const fill = document.getElementById('formProgressFill');
+        const bar = fill?.closest('[role="progressbar"]');
+        if (fill) fill.style.width = `${score}%`;
+        if (bar) bar.setAttribute('aria-valuenow', score);
+
+        this.sections.forEach(section => {
+            const step = document.querySelector(`.progress-steps .step[data-section="${section}"]`);
+            if (!step) return;
+            const isComplete = this.isSectionComplete(section);
+            step.classList.toggle('completed', isComplete);
         });
-        document.querySelector(`.form-section[data-section="${sectionName}"]`).classList.add('active');
-        
-        // Scroll to top of form
-        Utils.scrollTo('.form-content');
+    }
+
+    isSectionComplete(section) {
+        switch (section) {
+            case 'personal':
+                return !!(this.formData.personal.fullName.trim() && this.formData.personal.email.trim());
+            case 'experience':
+                return this.formData.experience.some(e => e.title.trim() && e.company.trim());
+            case 'education':
+                return this.formData.education.some(e => e.degree.trim() && e.school.trim());
+            case 'skills':
+                return this.formData.skills.some(s => s.name.trim());
+            default:
+                return false;
+        }
+    }
+
+    updateCharCounter() {
+        const summary = document.getElementById('summary');
+        const counter = document.getElementById('summaryCounter');
+        if (!summary || !counter) return;
+
+        const len = summary.value.length;
+        const max = summary.maxLength || 500;
+        counter.textContent = `${len} / ${max}`;
+        counter.classList.toggle('warning', len > max * 0.85 && len < max);
+        counter.classList.toggle('limit', len >= max);
     }
     
     initializeDynamicSections() {
-        // Add initial entries if none exist
+        this.renderEmptyStates();
+
         if (this.formData.experience.length === 0) {
             this.addExperienceEntry();
         }
@@ -314,18 +548,38 @@ class FormHandler {
         if (this.formData.education.length === 0) {
             this.addEducationEntry();
         }
-        
-        if (this.formData.skills.length === 0) {
-            // Add some default skills
-            ['JavaScript', 'HTML/CSS', 'Communication'].forEach(skill => {
-                this.addSkillEntry(skill);
-            });
-        }
+    }
 
-        // Initialize languages for Student as an example default
-        if (this.formData.languages.length === 0) {
-            // no default entries; user can add
-        }
+    renderEmptyStates() {
+        const containers = [
+            { id: 'skillsContainer', key: 'skills', icon: 'fa-cogs', text: 'No skills added yet.', btn: 'addSkillBtn', label: 'Add your first skill' },
+            { id: 'projectsContainer', key: 'projects', icon: 'fa-folder-open', text: 'No projects added yet.', btn: 'addProjectBtn', label: 'Add a project' },
+            { id: 'certificationsContainer', key: 'certifications', icon: 'fa-certificate', text: 'No certifications added yet.', btn: 'addCertificationBtn', label: 'Add a certification' },
+            { id: 'achievementsContainer', key: 'achievements', icon: 'fa-trophy', text: 'No achievements added yet.', btn: 'addAchievementBtn', label: 'Add an achievement' },
+            { id: 'activitiesContainer', key: 'activities', icon: 'fa-users', text: 'No activities added yet.', btn: 'addActivityBtn', label: 'Add an activity' },
+            { id: 'languagesContainer', key: 'languages', icon: 'fa-language', text: 'No languages added yet.', btn: 'addLanguageBtn', label: 'Add a language' }
+        ];
+
+        containers.forEach(({ id, key, icon, text, btn, label }) => {
+            const container = document.getElementById(id);
+            if (!container || this.formData[key]?.length > 0) return;
+            if (container.querySelector('.form-entry, .skill-entry, .simple-entry')) return;
+
+            container.innerHTML = `
+                <div class="empty-state" data-empty-for="${id}">
+                    <i class="fas ${icon}"></i>
+                    <p>${text}</p>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('${btn}').click()">
+                        <i class="fas fa-plus"></i> ${label}
+                    </button>
+                </div>
+            `;
+        });
+    }
+
+    clearEmptyState(containerId) {
+        const container = document.getElementById(containerId);
+        container?.querySelector(`[data-empty-for="${containerId}"]`)?.remove();
     }
     
     addExperienceEntry(data = null) {
@@ -506,6 +760,7 @@ class FormHandler {
         }
         
         const container = document.getElementById('skillsContainer');
+        this.clearEmptyState('skillsContainer');
         
         // Create skills container if it doesn't exist
         let skillsGrid = container.querySelector('.skills-container');
@@ -548,6 +803,7 @@ class FormHandler {
         const entry = data || { id, title: '', role: '', duration: '', description: '' };
         if (!data) this.formData.projects.push(entry);
         const container = document.getElementById('projectsContainer');
+        this.clearEmptyState('projectsContainer');
         const div = document.createElement('div');
         div.className = 'form-entry';
         div.dataset.entryId = id;
@@ -591,6 +847,7 @@ class FormHandler {
         const entry = data || { id, name: '', issuer: '', year: '' };
         if (!data) this.formData.certifications.push(entry);
         const container = document.getElementById('certificationsContainer');
+        this.clearEmptyState('certificationsContainer');
         const div = document.createElement('div');
         div.className = 'form-entry';
         div.dataset.entryId = id;
@@ -627,6 +884,7 @@ class FormHandler {
         const entry = data || { id, title: '', description: '' };
         if (!data) this.formData.achievements.push(entry);
         const container = document.getElementById('achievementsContainer');
+        this.clearEmptyState('achievementsContainer');
         const div = document.createElement('div');
         div.className = 'form-entry';
         div.dataset.entryId = id;
@@ -657,6 +915,7 @@ class FormHandler {
         const entry = data || { id, title: '', description: '' };
         if (!data) this.formData.activities.push(entry);
         const container = document.getElementById('activitiesContainer');
+        this.clearEmptyState('activitiesContainer');
         const div = document.createElement('div');
         div.className = 'form-entry';
         div.dataset.entryId = id;
@@ -687,6 +946,7 @@ class FormHandler {
         const entry = data || { id, name: '', proficiency: 'Fluent' };
         if (!data) this.formData.languages.push(entry);
         const container = document.getElementById('languagesContainer');
+        this.clearEmptyState('languagesContainer');
         const div = document.createElement('div');
         div.className = 'simple-entry';
         div.dataset.entryId = id;
@@ -787,7 +1047,7 @@ class FormHandler {
         });
         
         if (errors.length > 0) {
-            Utils.showToast(`Please fix the following errors:\n${errors.join('\n')}`, 'error', 5000);
+            Utils.showToast(`Please fix these errors:\n• ${errors.join('\n• ')}`, 'error', 6000);
         }
         
         return isValid;
@@ -840,7 +1100,14 @@ class FormHandler {
     }
     
     populateForm() {
-        // Populate personal information
+        // Clear dynamic containers before repopulating
+        ['experienceContainer', 'educationContainer', 'skillsContainer', 'projectsContainer',
+         'certificationsContainer', 'achievementsContainer', 'activitiesContainer', 'languagesContainer']
+            .forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '';
+            });
+
         Object.keys(this.formData.personal).forEach(key => {
             const input = document.querySelector(`[name="${key}"]`);
             if (input) {
@@ -872,6 +1139,10 @@ class FormHandler {
         this.formData.achievements.forEach(a => this.addAchievementEntry(a));
         this.formData.activities.forEach(a => this.addActivityEntry(a));
         this.formData.languages.forEach(l => this.addLanguageEntry(l));
+
+        this.updateCharCounter();
+        this.updateSectionNav();
+        this.updateProgress();
     }
     
     showAutoSaveIndicator(status) {
@@ -930,6 +1201,7 @@ class FormHandler {
             experience: [],
             education: [],
             skills: [],
+            projects: [],
             certifications: [],
             achievements: [],
             activities: [],
@@ -952,6 +1224,8 @@ class FormHandler {
         // Reinitialize
         this.initializeDynamicSections();
         this.applyUserTypeUI();
+        this.updateSectionNav();
+        this.updateProgress();
         
         Utils.showToast('Form cleared successfully', 'info');
     }

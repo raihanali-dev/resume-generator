@@ -1,0 +1,252 @@
+/* ===== GLOBAL AMBIENT BACKGROUND ===== */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+        radial-gradient(ellipse 80% 60% at 10% 20%, rgba(102, 126, 234, 0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 50% at 90% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(13, 148, 136, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+/* ===== HEADER GLASS ===== */
+.header {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.92) 0%, rgba(118, 75, 162, 0.92) 100%);
+}
+
+.logo {
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.logo:hover {
+    transform: scale(1.02);
+}
+
+/* ===== STAGGER ENTRANCE ===== */
+.animate-in {
+    animation: animateIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-in-delay-1 { animation-delay: 0.08s; }
+.animate-in-delay-2 { animation-delay: 0.16s; }
+.animate-in-delay-3 { animation-delay: 0.24s; }
+.animate-in-delay-4 { animation-delay: 0.32s; }
+.animate-in-delay-5 { animation-delay: 0.4s; }
+
+@keyframes animateIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== WELCOME HERO ===== */
+.welcome-badge {
+    animation: badgePulse 3s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.2); }
+    50% { box-shadow: 0 0 0 8px rgba(102, 126, 234, 0); }
+}
+
+.welcome-title {
+    animation: titleShimmer 4s ease-in-out infinite;
+    background-size: 200% auto;
+}
+
+@keyframes titleShimmer {
+    0%, 100% { background-position: 0% center; }
+    50% { background-position: 100% center; }
+}
+
+.welcome-feature {
+    opacity: 0;
+    animation: featureSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.welcome-feature:nth-child(1) { animation-delay: 0.15s; }
+.welcome-feature:nth-child(2) { animation-delay: 0.25s; }
+.welcome-feature:nth-child(3) { animation-delay: 0.35s; }
+
+@keyframes featureSlideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== BUTTONS ===== */
+.btn-primary {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.btn-primary:hover::after {
+    transform: translateX(100%);
+}
+
+.btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+/* ===== TEMPLATE CARDS ===== */
+.template-card {
+    opacity: 0;
+    animation: cardReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.template-card:nth-child(1) { animation-delay: 0.05s; }
+.template-card:nth-child(2) { animation-delay: 0.1s; }
+.template-card:nth-child(3) { animation-delay: 0.15s; }
+.template-card:nth-child(4) { animation-delay: 0.2s; }
+.template-card:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes cardReveal {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.template-preview::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 60%, rgba(102, 126, 234, 0.04) 100%);
+    pointer-events: none;
+}
+
+/* ===== FORM STEPS ===== */
+.step {
+    position: relative;
+}
+
+.step.active {
+    animation: stepActivate 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes stepActivate {
+    from { transform: scale(0.96); }
+    to { transform: scale(1); }
+}
+
+.step.completed:not(.active) i {
+    animation: checkPop 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes checkPop {
+    0% { transform: scale(0.5); }
+    70% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+/* ===== STEP DOTS (form nav) ===== */
+.step-dots {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-border, #e2e8f0);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.step-dot.active {
+    width: 24px;
+    border-radius: 4px;
+    background: var(--gradient-primary, linear-gradient(135deg, #667eea, #764ba2));
+}
+
+.step-dot.completed {
+    background: var(--color-success, #10b981);
+}
+
+/* ===== LOADING OVERLAY ===== */
+.loading-spinner i {
+    animation: spinPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes spinPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+.loading-overlay {
+    animation: overlayFadeIn 0.25s ease;
+}
+
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ===== PREVIEW ZOOM-IN ===== */
+.preview-content.preview-resume {
+    animation: previewReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes previewReveal {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ===== SCREEN TRANSITIONS ===== */
+.screen-enter {
+    animation: screenEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes screenEnter {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== INPUT FOCUS GLOW ===== */
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    animation: inputGlow 0.3s ease;
+}
+
+@keyframes inputGlow {
+    from { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+    to { box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .welcome-badge,
+    .welcome-title,
+    .welcome-feature,
+    .template-card,
+    .step.active,
+    .preview-content.preview-resume,
+    .screen-enter {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .btn-primary::after {
+        display: none;
+    }
+}

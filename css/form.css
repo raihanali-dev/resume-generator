@@ -43,8 +43,9 @@
     padding: 0.75rem;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     color: #64748b;
+    border: 2px solid transparent;
 }
 
 .step:hover {
@@ -55,6 +56,18 @@
 .step.active {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+}
+
+.step.completed {
+    color: var(--color-success, #10b981);
+}
+
+.step.completed:not(.active) {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.step.completed:not(.active) i {
+    color: var(--color-success, #10b981);
 }
 
 .step i {
@@ -86,13 +99,56 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
+.form-sections-viewport {
+    position: relative;
+    min-height: 420px;
+    overflow: hidden;
+}
+
 .form-section {
     display: none;
+    opacity: 0;
 }
 
 .form-section.active {
     display: block;
-    animation: fadeInUp 0.4s ease;
+    animation: sectionEnterForward 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.form-section.enter-from-right {
+    animation: sectionEnterForward 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.form-section.enter-from-left {
+    animation: sectionEnterBackward 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.form-section.exit-to-left {
+    animation: sectionExitLeft 0.28s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+}
+
+.form-section.exit-to-right {
+    animation: sectionExitRight 0.28s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+}
+
+@keyframes sectionEnterForward {
+    from { opacity: 0; transform: translateX(28px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes sectionEnterBackward {
+    from { opacity: 0; transform: translateX(-28px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes sectionExitLeft {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-28px); }
+}
+
+@keyframes sectionExitRight {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(28px); }
 }
 
 .form-section h3 {
@@ -146,7 +202,7 @@
 
 .entry-header {
     display: flex;
-    justify-content: between;
+    justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
 }
@@ -319,6 +375,15 @@
     margin-top: 2rem;
     padding-top: 1.5rem;
     border-top: 1px solid #e5e7eb;
+    gap: 1rem;
+}
+
+.form-nav-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
 }
 
 .nav-buttons {
@@ -451,4 +516,191 @@
 
 .auto-save-indicator i {
     font-size: 0.8rem;
+}
+
+/* ===== INLINE OPTIONS (RADIO GROUPS) ===== */
+.inline-options {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.inline-options label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.25rem;
+    border: 2px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-sm, 8px);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all var(--transition, 0.25s ease);
+    margin-bottom: 0;
+}
+
+.inline-options label:has(input:checked) {
+    border-color: var(--color-primary, #667eea);
+    background: rgba(102, 126, 234, 0.08);
+    color: var(--color-primary, #667eea);
+}
+
+.inline-options input[type="radio"] {
+    width: auto;
+    accent-color: var(--color-primary, #667eea);
+}
+
+/* ===== SECTION SUB-GROUPS ===== */
+.section-sub {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px dashed var(--color-border, #e2e8f0);
+}
+
+.section-sub .section-header h3 {
+    font-size: 1.35rem;
+}
+
+/* ===== CHARACTER COUNTER ===== */
+.char-counter {
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--color-text-muted, #64748b);
+    margin-top: 0.35rem;
+}
+
+.char-counter.warning {
+    color: var(--color-warning, #f59e0b);
+}
+
+.char-counter.limit {
+    color: var(--color-error, #ef4444);
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    background: var(--color-bg, #f8fafc);
+    border: 2px dashed var(--color-border, #e2e8f0);
+    border-radius: var(--radius-md, 12px);
+    color: var(--color-text-muted, #64748b);
+}
+
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+/* ===== FORM PROGRESS BAR ===== */
+.form-progress-bar {
+    height: 4px;
+    background: var(--color-border, #e2e8f0);
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.form-progress-fill {
+    height: 100%;
+    background: var(--gradient-primary, linear-gradient(135deg, #667eea, #764ba2));
+    border-radius: 2px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ===== SIMPLE ENTRY (LANGUAGES) ===== */
+.simple-entry {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.simple-entry:hover {
+    border-color: #667eea;
+}
+
+.simple-entry input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 0.95rem;
+    padding: 0.5rem 0;
+}
+
+.simple-entry input:focus {
+    outline: none;
+}
+
+#languagesContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* ===== RESUME PREVIEW ===== */
+.resume-preview {
+    padding: 2rem 0;
+}
+
+.preview-container {
+    background: var(--color-surface, #fff);
+    border-radius: var(--radius-lg, 16px);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--color-border, #e2e8f0);
+    background: var(--color-bg, #f8fafc);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.preview-header h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--color-text, #1e293b);
+    margin: 0;
+}
+
+.preview-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.preview-content {
+    padding: 2rem;
+    background: #e2e8f0;
+    min-height: 400px;
+    display: flex;
+    justify-content: center;
+}
+
+.preview-content.preview-resume {
+    background: #94a3b8;
+    padding: 2rem 1rem;
+}
+
+.preview-content .template-modern,
+.preview-content .template-classic,
+.preview-content .template-minimal,
+.preview-content .template-executive,
+.preview-content .template-creative {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
 }

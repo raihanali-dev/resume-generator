@@ -47,6 +47,10 @@ class ResumeBuilderApp {
         document.getElementById('downloadBtn')?.addEventListener('click', () => {
             this.downloadResume();
         });
+
+        document.getElementById('printBtn')?.addEventListener('click', () => {
+            window.print();
+        });
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -127,76 +131,21 @@ class ResumeBuilderApp {
                     <p>We found a saved resume in progress. Would you like to continue where you left off or start fresh?</p>
                 </div>
                 <div class="continue-modal-footer">
-                    <button class="btn btn-secondary" onclick="app.startFresh(); this.closest('.continue-modal').remove();">
-                        Start Fresh
-                    </button>
-                    <button class="btn btn-primary" onclick="app.continueResume(); this.closest('.continue-modal').remove();">
-                        Continue Resume
-                    </button>
+                    <button class="btn btn-secondary" data-action="fresh">Start Fresh</button>
+                    <button class="btn btn-primary" data-action="continue">Continue Resume</button>
                 </div>
             </div>
         `;
-        
-        // Add modal styles
-        const modalStyles = `
-            .continue-modal {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.8);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10000;
-                animation: fadeIn 0.3s ease;
-            }
-            
-            .continue-modal-content {
-                background: white;
-                border-radius: 12px;
-                max-width: 500px;
-                width: 90%;
-                overflow: hidden;
-                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            }
-            
-            .continue-modal-header {
-                padding: 1.5rem;
-                border-bottom: 1px solid #e5e7eb;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-            }
-            
-            .continue-modal-header h3 {
-                margin: 0;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-            }
-            
-            .continue-modal-body {
-                padding: 1.5rem;
-            }
-            
-            .continue-modal-footer {
-                padding: 1.5rem;
-                border-top: 1px solid #e5e7eb;
-                display: flex;
-                gap: 1rem;
-                justify-content: flex-end;
-                background: #f8fafc;
-            }
-        `;
-        
-        if (!document.getElementById('continue-modal-styles')) {
-            const styleSheet = document.createElement('style');
-            styleSheet.id = 'continue-modal-styles';
-            styleSheet.textContent = modalStyles;
-            document.head.appendChild(styleSheet);
-        }
-        
+
+        modal.querySelector('[data-action="fresh"]').addEventListener('click', () => {
+            this.startFresh();
+            modal.remove();
+        });
+        modal.querySelector('[data-action="continue"]').addEventListener('click', () => {
+            this.continueResume();
+            modal.remove();
+        });
+
         document.body.appendChild(modal);
     }
     
@@ -234,6 +183,7 @@ class ResumeBuilderApp {
         this.showScreen('templates');
         this.updateBackButton(true, 'welcome');
         this.updateURL('templates');
+        templateManager.renderTemplateGrid();
     }
     
     navigateToForm() {
@@ -293,34 +243,36 @@ class ResumeBuilderApp {
     }
     
     showScreen(screenName) {
-        // Hide all screens
+        const targetScreen = this.screens[screenName];
+        const prevScreen = this.screens[this.currentScreen];
+
+        if (targetScreen && prevScreen && prevScreen !== targetScreen) {
+            prevScreen.classList.add('screen-exit');
+        }
+
         Object.values(this.screens).forEach(screen => {
-            if (screen) {
+            if (screen && screen !== targetScreen) {
                 screen.style.display = 'none';
+                screen.classList.remove('screen-exit', 'screen-enter');
             }
         });
-        
-        // Show target screen
-        const targetScreen = this.screens[screenName];
+
         if (targetScreen) {
             targetScreen.style.display = 'block';
-            targetScreen.classList.add('fade-in');
-            
-            // Remove animation class after animation completes
+            targetScreen.classList.add('screen-enter');
+
             setTimeout(() => {
-                targetScreen.classList.remove('fade-in');
-            }, 600);
+                targetScreen.classList.remove('screen-enter');
+            }, 500);
+
+            if (screenName === 'form') {
+                formHandler?.focusSectionFirstField(formHandler.currentSection);
+            }
         }
-        
+
         this.currentScreen = screenName;
-        
-        // Update page title
         this.updatePageTitle(screenName);
-        
-        // Scroll to top
-        window.scrollTo(0, 0);
-        
-        console.log(`Navigated to: ${screenName}`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     
     updateBackButton(show, targetScreen = null) {
@@ -369,10 +321,12 @@ class ResumeBuilderApp {
         const templateId = templateManager.getSelectedTemplate();
         const resumeHtml = templateManager.renderTemplate(templateId, formData);
         
+        previewContent.classList.remove('preview-resume');
         previewContent.innerHTML = resumeHtml;
         
-        // Add print-friendly styles
-        previewContent.classList.add('preview-resume');
+        requestAnimationFrame(() => {
+            previewContent.classList.add('preview-resume');
+        });
     }
     
     downloadResume() {
