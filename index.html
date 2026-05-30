@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder - Professional Resume Generator</title>
+    <meta name="description" content="Create professional resumes with our easy-to-use resume builder. Choose from multiple templates and export as PDF.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="./css/templates.css">
+    <link rel="stylesheet" href="./css/form.css">
+    <link rel="stylesheet" href="./css/responsive.css">
+    
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Resume Builder</span>
+                </div>
+                <nav class="nav">
+                    <button id="backBtn" class="btn btn-secondary" style="display: none;">
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Welcome Screen -->
+            <section id="welcomeScreen" class="welcome-screen">
+                <div class="welcome-content">
+                    <h1 class="welcome-title">Create Your Professional Resume</h1>
+                    <p class="welcome-subtitle">Choose from our collection of professionally designed templates and build your resume in minutes.</p>
+                    <button id="getStartedBtn" class="btn btn-primary btn-large">
+                        Get Started
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Template Selection -->
+            <section id="templateSelection" class="template-selection" style="display: none;">
+                <div class="section-header">
+                    <h2>Choose Your Template</h2>
+                    <p>Select a template that best represents your professional style</p>
+                </div>
+                <div class="template-grid" id="templateGrid">
+                    <!-- Templates will be dynamically loaded here -->
+                </div>
+            </section>
+
+            <!-- Resume Form -->
+            <section id="resumeForm" class="resume-form" style="display: none;">
+                <div class="form-container">
+                    <div class="form-sidebar">
+                        <div class="form-progress">
+                            <h3>Resume Sections</h3>
+                            <div class="progress-steps">
+                                <div class="step active" data-section="personal">
+                                    <i class="fas fa-user"></i>
+                                    <span>Personal Info</span>
+                                </div>
+                                <div class="step" data-section="experience">
+                                    <i class="fas fa-briefcase"></i>
+                                    <span>Experience</span>
+                                </div>
+                                <div class="step" data-section="education">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    <span>Education</span>
+                                </div>
+                                <div class="step" data-section="skills">
+                                    <i class="fas fa-cogs"></i>
+                                    <span>Skills</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button id="previewBtn" class="btn btn-secondary">
+                                <i class="fas fa-eye"></i>
+                                Preview
+                            </button>
+                            <button id="generatePdfBtn" class="btn btn-primary">
+                                <i class="fas fa-download"></i>
+                                Download PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-content">
+                        <form id="resumeFormElement">
+                            <!-- Personal Information -->
+                            <div class="form-section active" data-section="personal">
+                                <h3>Personal Information</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="userType">I am a *</label>
+                                        <div class="inline-options" id="userTypeOptions">
+                                            <label><input type="radio" name="userType" value="professional" checked> Professional</label>
+                                            <label><input type="radio" name="userType" value="student"> Student</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="fullName">Full Name *</label>
+                                        <input type="text" id="fullName" name="fullName" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="email">Email Address *</label>
+                                        <input type="email" id="email" name="email" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="phone">Phone Number</label>
+                                        <input type="tel" id="phone" name="phone">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="location">Location</label>
+                                        <input type="text" id="location" name="location" placeholder="City, State">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="website">Website/Portfolio</label>
+                                        <input type="url" id="website" name="website" placeholder="https://yourwebsite.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="linkedin">LinkedIn Profile</label>
+                                        <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/yourprofile">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="summary">Professional Summary</label>
+                                    <textarea id="summary" name="summary" rows="4" placeholder="Brief overview of your professional background and career objectives..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Experience Section -->
+                            <div class="form-section" data-section="experience">
+                                <div class="section-header">
+                                    <h3 id="experienceSectionTitle">Work Experience</h3>
+                                    <button type="button" class="btn btn-outline" id="addExperienceBtn">
+                                        <i class="fas fa-plus"></i>
+                                        Add Experience
+                                    </button>
+                                </div>
+                                <div id="experienceContainer">
+                                    <!-- Experience entries will be added dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Education Section -->
+                            <div class="form-section" data-section="education">
+                                <div class="section-header">
+                                    <h3>Education</h3>
+                                    <button type="button" class="btn btn-outline" id="addEducationBtn">
+                                        <i class="fas fa-plus"></i>
+                                        Add Education
+                                    </button>
+                                </div>
+                                <div id="educationContainer">
+                                    <!-- Education entries will be added dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Skills Section -->
+                            <div class="form-section" data-section="skills">
+                                <div class="section-header">
+                                    <h3>Skills</h3>
+                                    <button type="button" class="btn btn-outline" id="addSkillBtn">
+                                        <i class="fas fa-plus"></i>
+                                        Add Skill
+                                    </button>
+                                </div>
+                                <div id="skillsContainer">
+                                    <!-- Skills will be added dynamically -->
+                                </div>
+                                <!-- Professional-only: Projects (optional) -->
+                                <div class="section-sub" id="projectsSection" style="display: none;">
+                                    <div class="section-header">
+                                        <h3>Projects (Optional)</h3>
+                                        <button type="button" class="btn btn-outline" id="addProjectBtn">
+                                            <i class="fas fa-plus"></i>
+                                            Add Project
+                                        </button>
+                                    </div>
+                                    <div id="projectsContainer"></div>
+                                </div>
+                                <!-- Conditionally shown for Professional: Certifications -->
+                                <div class="section-sub" id="certificationsSection" style="display: none;">
+                                    <div class="section-header">
+                                        <h3>Certifications</h3>
+                                        <button type="button" class="btn btn-outline" id="addCertificationBtn">
+                                            <i class="fas fa-plus"></i>
+                                            Add Certification
+                                        </button>
+                                    </div>
+                                    <div id="certificationsContainer"></div>
+                                </div>
+                                <!-- Conditionally shown for Student: Achievements, Extracurricular, Languages -->
+                                <div class="section-sub" id="achievementsSection" style="display: none;">
+                                    <div class="section-header">
+                                        <h3>Achievements / Awards</h3>
+                                        <button type="button" class="btn btn-outline" id="addAchievementBtn">
+                                            <i class="fas fa-plus"></i>
+                                            Add Achievement
+                                        </button>
+                                    </div>
+                                    <div id="achievementsContainer"></div>
+                                </div>
+                                <div class="section-sub" id="activitiesSection" style="display: none;">
+                                    <div class="section-header">
+                                        <h3>Extracurricular Activities</h3>
+                                        <button type="button" class="btn btn-outline" id="addActivityBtn">
+                                            <i class="fas fa-plus"></i>
+                                            Add Activity
+                                        </button>
+                                    </div>
+                                    <div id="activitiesContainer"></div>
+                                </div>
+                                <div class="section-sub" id="languagesSection" style="display: none;">
+                                    <div class="section-header">
+                                        <h3>Languages Known</h3>
+                                        <button type="button" class="btn btn-outline" id="addLanguageBtn">
+                                            <i class="fas fa-plus"></i>
+                                            Add Language
+                                        </button>
+                                    </div>
+                                    <div id="languagesContainer"></div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Resume Preview -->
+            <section id="resumePreview" class="resume-preview" style="display: none;">
+                <div class="preview-container">
+                    <div class="preview-header">
+                        <h3>Resume Preview</h3>
+                        <div class="preview-actions">
+                            <button id="editBtn" class="btn btn-secondary">
+                                <i class="fas fa-edit"></i>
+                                Edit
+                            </button>
+                            <button id="downloadBtn" class="btn btn-primary">
+                                <i class="fas fa-download"></i>
+                                Download PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div class="preview-content" id="previewContent">
+                        <!-- Resume preview will be rendered here -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Resume Builder. Built with ❤️ for professionals worldwide.</p>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Generating your resume...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="./js/utils.js"></script>
+    <script src="./js/templates.js"></script>
+    <script src="./js/formHandler.js"></script>
+    <script src="./js/pdfGenerator.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+</html>
