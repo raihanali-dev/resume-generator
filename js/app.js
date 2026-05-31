@@ -204,17 +204,19 @@ class ResumeBuilderApp {
             this.navigateToTemplates();
             return;
         }
-        
-        const formData = formHandler.getFormData();
-        if (!formData.personal.fullName || !formData.personal.email) {
-            Utils.showToast('Please fill in at least your name and email', 'warning');
-            this.navigateToForm();
+
+        formHandler.syncFromDOM();
+
+        if (!formHandler.validateForPreview()) {
+            if (this.currentScreen !== 'form') {
+                this.navigateToForm();
+            }
             return;
         }
-        
-        // Render preview
-        this.renderPreview(formData);
-        
+
+        formHandler.saveFormData();
+        this.renderPreview(formHandler.getFormDataForRender());
+
         this.showScreen('preview');
         this.updateBackButton(true, 'form');
         this.updateURL('preview');
@@ -244,22 +246,17 @@ class ResumeBuilderApp {
     
     showScreen(screenName) {
         const targetScreen = this.screens[screenName];
-        const prevScreen = this.screens[this.currentScreen];
-
-        if (targetScreen && prevScreen && prevScreen !== targetScreen) {
-            prevScreen.classList.add('screen-exit');
-        }
 
         Object.values(this.screens).forEach(screen => {
-            if (screen && screen !== targetScreen) {
+            if (screen) {
                 screen.style.display = 'none';
-                screen.classList.remove('screen-exit', 'screen-enter');
+                screen.classList.remove('screen-exit', 'screen-enter', 'active-screen');
             }
         });
 
         if (targetScreen) {
             targetScreen.style.display = 'block';
-            targetScreen.classList.add('screen-enter');
+            targetScreen.classList.add('screen-enter', 'active-screen');
 
             setTimeout(() => {
                 targetScreen.classList.remove('screen-enter');
@@ -269,6 +266,9 @@ class ResumeBuilderApp {
                 formHandler?.focusSectionFirstField(formHandler.currentSection);
             }
         }
+
+        document.body.classList.remove('screen-welcome', 'screen-templates', 'screen-form', 'screen-preview');
+        document.body.classList.add(`screen-${screenName}`);
 
         this.currentScreen = screenName;
         this.updatePageTitle(screenName);
@@ -301,16 +301,17 @@ class ResumeBuilderApp {
     
     handlePopState(e) {
         const state = e.state;
-        if (state && state.screen) {
-            this.showScreen(state.screen);
+        const screen = state?.screen || window.location.hash.slice(1);
+
+        if (screen === 'preview') {
+            this.navigateToPreview();
+            return;
+        }
+
+        if (screen && this.screens[screen]) {
+            this.showScreen(screen);
         } else {
-            // Handle direct URL access
-            const hash = window.location.hash.slice(1);
-            if (hash && this.screens[hash]) {
-                this.showScreen(hash);
-            } else {
-                this.showScreen('welcome');
-            }
+            this.showScreen('welcome');
         }
     }
     
@@ -330,7 +331,13 @@ class ResumeBuilderApp {
     }
     
     downloadResume() {
-        const formData = formHandler.getFormData();
+        formHandler.syncFromDOM();
+
+        if (!formHandler.validateForPreview()) {
+            return;
+        }
+
+        const formData = formHandler.getFormDataForRender();
         const templateId = templateManager.getSelectedTemplate();
         
         if (!templateId) {
@@ -365,7 +372,7 @@ class ResumeBuilderApp {
         // Ctrl/Cmd + P: Preview
         if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
             e.preventDefault();
-            if (this.currentScreen === 'form') {
+            if (this.currentScreen === 'form' || this.currentScreen === 'preview') {
                 this.navigateToPreview();
             }
         }

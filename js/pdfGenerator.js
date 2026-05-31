@@ -62,7 +62,7 @@ class PDFGenerator {
         
         try {
             const tempContainer = this.createTempContainer();
-            const resumeHtml = templateManager.renderTemplate(templateId, formData);
+            const resumeHtml = templateManager.renderTemplate(templateId, formData, { includeWatermark: false });
             tempContainer.innerHTML = resumeHtml;
             
             await this.waitForContent(tempContainer);
@@ -81,10 +81,6 @@ class PDFGenerator {
                     if (root) {
                         root.style.width = '210mm';
                         root.style.boxSizing = 'border-box';
-                    }
-                    const watermark = clonedDoc.querySelector('.resume-watermark-first');
-                    if (watermark) {
-                        watermark.style.display = 'none';
                     }
                 }
             });
@@ -182,7 +178,7 @@ class PDFGenerator {
     async previewPDF(formData, templateId) {
         try {
             const tempContainer = this.createTempContainer();
-            const resumeHtml = templateManager.renderTemplate(templateId, formData);
+            const resumeHtml = templateManager.renderTemplate(templateId, formData, { includeWatermark: false });
             tempContainer.innerHTML = resumeHtml;
             
             await this.waitForContent(tempContainer);
@@ -235,7 +231,7 @@ class PDFGenerator {
             tempContainer.style.width = config.format === 'letter' ? '8.5in' : '210mm';
             tempContainer.style.padding = `${config.margin}mm`;
             
-            const resumeHtml = templateManager.renderTemplate(templateId, formData);
+            const resumeHtml = templateManager.renderTemplate(templateId, formData, { includeWatermark: false });
             tempContainer.innerHTML = resumeHtml;
             
             await this.waitForContent(tempContainer);

@@ -314,7 +314,7 @@ class TemplateManager {
         document.addEventListener('keydown', handleEscape);
     }
     
-    renderTemplate(templateId, data) {
+    renderTemplate(templateId, data, options = {}) {
         const template = this.templates[templateId];
         if (!template) return '';
         
@@ -339,11 +339,13 @@ class TemplateManager {
                 html = this.renderModernTemplate(data);
         }
 
-        return this.wrapWithWatermark(html);
+        const includeWatermark = options.includeWatermark !== false;
+        return this.wrapDocument(html, includeWatermark);
     }
 
-    wrapWithWatermark(html) {
-        return `<div class="resume-document-root">${html}${Utils.getWatermarkHtml()}</div>`;
+    wrapDocument(html, includeWatermark = true) {
+        const watermark = includeWatermark ? Utils.getWatermarkHtml() : '';
+        return `<div class="resume-document-root">${html}${watermark}</div>`;
     }
     
     renderModernTemplate(data) {
@@ -757,11 +759,11 @@ class TemplateManager {
     }
 
     buildSupplementalSections(data, e, layout = 'default') {
-        const projects = data.projects || [];
-        const certifications = data.certifications || [];
-        const achievements = data.achievements || [];
-        const activities = data.activities || [];
-        const languages = data.languages || [];
+        const projects = (data.projects || []).filter(p => (p.title || '').trim());
+        const certifications = (data.certifications || []).filter(c => (c.name || '').trim());
+        const achievements = (data.achievements || []).filter(a => (a.title || '').trim());
+        const activities = (data.activities || []).filter(a => (a.title || '').trim());
+        const languages = (data.languages || []).filter(l => (l.name || '').trim());
         let html = '';
 
         if (projects.length > 0) {

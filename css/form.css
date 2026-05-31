@@ -653,6 +653,25 @@
     padding: 2rem 0;
 }
 
+body.screen-preview .footer {
+    display: none;
+}
+
+body.screen-preview #welcomeScreen,
+body.screen-preview #templateSelection,
+body.screen-preview #resumeForm {
+    display: none !important;
+}
+
+body.screen-preview .main {
+    padding-top: 0;
+    min-height: calc(100vh - 72px);
+}
+
+body.screen-preview .resume-preview {
+    padding: 1rem 0 2rem;
+}
+
 .preview-container {
     background: var(--color-surface, #fff);
     border-radius: var(--radius-lg, 16px);
@@ -660,7 +679,7 @@
     overflow: hidden;
 }
 
-.preview-header {
+.preview-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -671,7 +690,7 @@
     gap: 1rem;
 }
 
-.preview-header h3 {
+.preview-toolbar h3 {
     font-size: 1.15rem;
     font-weight: 600;
     color: var(--color-text, #1e293b);
@@ -693,8 +712,14 @@
 }
 
 .preview-content.preview-resume {
-    background: #94a3b8;
+    background: #64748b;
     padding: 2rem 1rem;
+    align-items: flex-start;
+}
+
+.preview-content .resume-document-root {
+    width: 100%;
+    max-width: 8.5in;
 }
 
 .preview-content .template-modern,

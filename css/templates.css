@@ -742,38 +742,39 @@
 .resume-document-root {
     position: relative;
     width: 100%;
+    box-sizing: border-box;
 }
 
 .resume-watermark-first {
     position: absolute;
-    top: calc(297mm - 14mm);
+    top: calc(297mm - 11mm);
     left: 0;
     right: 0;
     text-align: center;
     pointer-events: none;
-    z-index: 20;
+    z-index: 5;
 }
 
 .resume-watermark-first span {
     display: inline-block;
     font-family: 'Inter', sans-serif;
-    font-size: 7.5pt;
+    font-size: 7pt;
     font-weight: 600;
     color: #94a3b8;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    opacity: 0.9;
-    padding: 0.2rem 0.75rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.35);
+    opacity: 0.85;
+    padding-top: 0.35rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.3);
+    line-height: 1;
 }
 
 .template-executive + .resume-watermark-first {
-    top: calc(297mm - 12mm);
+    top: calc(297mm - 10mm);
 }
 
 .template-creative + .resume-watermark-first span {
-    color: #0d9488;
-    opacity: 0.75;
+    color: #64748b;
 }
 
 /* ===== TEMPLATE-SPECIFIC PREVIEW PLACEHOLDERS ===== */

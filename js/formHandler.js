@@ -34,10 +34,15 @@ class FormHandler {
     }
     
     init() {
+        const hadSavedData = !!Utils.storage.get('resumeFormData');
         this.loadSavedData();
         this.attachEventListeners();
         this.setupAutoSave();
-        this.initializeDynamicSections();
+        if (!hadSavedData) {
+            this.initializeDynamicSections();
+        } else {
+            this.renderEmptyStates();
+        }
         this.applyUserTypeUI();
         this.initStepDots();
         this.updateSectionNav();
@@ -126,7 +131,7 @@ class FormHandler {
         });
         
         document.getElementById('generatePdfBtn').addEventListener('click', () => {
-            this.generatePDF();
+            this.generateResume();
         });
 
         // Section navigation
@@ -192,12 +197,13 @@ class FormHandler {
             return;
         }
         
-        // Handle dynamic sections (experience, education, skills, projects, certifications, achievements, activities, languages)
+        // Handle dynamic sections — prefer entry's data-section over parent form-section
         const entryContainer = element.closest('.form-entry') || element.closest('.skill-entry') || element.closest('.simple-entry');
         if (entryContainer) {
             const entryId = entryContainer.dataset.entryId;
-            const sectionElement = entryContainer.closest('.form-section');
-            const sectionType = sectionElement ? sectionElement.dataset.section : entryContainer.dataset.section || 'skills';
+            const sectionType = entryContainer.dataset.section
+                || entryContainer.closest('.form-section')?.dataset.section
+                || 'skills';
             
             if (sectionType === 'experience') {
                 const entry = this.formData.experience.find(exp => exp.id === entryId);
@@ -583,8 +589,8 @@ class FormHandler {
     }
     
     addExperienceEntry(data = null) {
-        const id = Utils.generateId();
-        const experienceData = data || {
+        const id = data?.id || Utils.generateId();
+        const experienceData = data ? { ...data, id: data.id || id } : {
             id,
             title: '',
             company: '',
@@ -602,13 +608,14 @@ class FormHandler {
         const container = document.getElementById('experienceContainer');
         const entryDiv = document.createElement('div');
         entryDiv.className = 'form-entry';
-        entryDiv.dataset.entryId = id;
+        entryDiv.dataset.entryId = experienceData.id;
+        entryDiv.dataset.section = 'experience';
         
         entryDiv.innerHTML = `
             <div class="entry-header">
                 <h4 class="entry-title">Experience ${this.formData.experience.length}</h4>
                 <div class="entry-actions">
-                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('experience', '${id}')">
+                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('experience', '${experienceData.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -616,19 +623,19 @@ class FormHandler {
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="title_${id}">Job Title *</label>
-                    <input type="text" id="title_${id}" name="title" value="${experienceData.title}" required>
+                    <label for="title_${experienceData.id}">Job Title *</label>
+                    <input type="text" id="title_${experienceData.id}" name="title" value="${experienceData.title}" required>
                 </div>
                 <div class="form-group">
-                    <label for="company_${id}">Company *</label>
-                    <input type="text" id="company_${id}" name="company" value="${experienceData.company}" required>
+                    <label for="company_${experienceData.id}">Company *</label>
+                    <input type="text" id="company_${experienceData.id}" name="company" value="${experienceData.company}" required>
                 </div>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="location_${id}">Location</label>
-                    <input type="text" id="location_${id}" name="location" value="${experienceData.location}" placeholder="City, State">
+                    <label for="location_${experienceData.id}">Location</label>
+                    <input type="text" id="location_${experienceData.id}" name="location" value="${experienceData.location}" placeholder="City, State">
                 </div>
                 <div class="form-group">
                     <label>
@@ -640,18 +647,18 @@ class FormHandler {
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="startDate_${id}">Start Date *</label>
-                    <input type="month" id="startDate_${id}" name="startDate" value="${experienceData.startDate}" required>
+                    <label for="startDate_${experienceData.id}">Start Date *</label>
+                    <input type="month" id="startDate_${experienceData.id}" name="startDate" value="${experienceData.startDate}" required>
                 </div>
                 <div class="form-group">
-                    <label for="endDate_${id}">End Date</label>
-                    <input type="month" id="endDate_${id}" name="endDate" value="${experienceData.endDate}" ${experienceData.current ? 'disabled' : ''}>
+                    <label for="endDate_${experienceData.id}">End Date</label>
+                    <input type="month" id="endDate_${experienceData.id}" name="endDate" value="${experienceData.endDate}" ${experienceData.current ? 'disabled' : ''}>
                 </div>
             </div>
             
             <div class="form-group">
-                <label for="description_${id}">Job Description</label>
-                <textarea id="description_${id}" name="description" rows="4" placeholder="Describe your responsibilities and achievements...">${experienceData.description}</textarea>
+                <label for="description_${experienceData.id}">Job Description</label>
+                <textarea id="description_${experienceData.id}" name="description" rows="4" placeholder="Describe your responsibilities and achievements...">${experienceData.description}</textarea>
             </div>
         `;
         
@@ -665,8 +672,8 @@ class FormHandler {
     }
     
     addEducationEntry(data = null) {
-        const id = Utils.generateId();
-        const educationData = data || {
+        const id = data?.id || Utils.generateId();
+        const educationData = data ? { ...data, id: data.id || id } : {
             id,
             degree: '',
             school: '',
@@ -684,13 +691,14 @@ class FormHandler {
         const container = document.getElementById('educationContainer');
         const entryDiv = document.createElement('div');
         entryDiv.className = 'form-entry';
-        entryDiv.dataset.entryId = id;
+        entryDiv.dataset.entryId = educationData.id;
+        entryDiv.dataset.section = 'education';
         
         entryDiv.innerHTML = `
             <div class="entry-header">
                 <h4 class="entry-title">Education ${this.formData.education.length}</h4>
                 <div class="entry-actions">
-                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('education', '${id}')">
+                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('education', '${educationData.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -698,34 +706,34 @@ class FormHandler {
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="degree_${id}">Degree/Certificate *</label>
-                    <input type="text" id="degree_${id}" name="degree" value="${educationData.degree}" placeholder="e.g., Bachelor of Science in Computer Science" required>
+                    <label for="degree_${educationData.id}">Degree/Certificate *</label>
+                    <input type="text" id="degree_${educationData.id}" name="degree" value="${educationData.degree}" placeholder="e.g., Bachelor of Science in Computer Science" required>
                 </div>
                 <div class="form-group">
-                    <label for="school_${id}">School/Institution *</label>
-                    <input type="text" id="school_${id}" name="school" value="${educationData.school}" required>
+                    <label for="school_${educationData.id}">School/Institution *</label>
+                    <input type="text" id="school_${educationData.id}" name="school" value="${educationData.school}" required>
                 </div>
             </div>
             
             <div class="form-row-3">
                 <div class="form-group">
-                    <label for="location_${id}">Location</label>
-                    <input type="text" id="location_${id}" name="location" value="${educationData.location}" placeholder="City, State">
+                    <label for="location_${educationData.id}">Location</label>
+                    <input type="text" id="location_${educationData.id}" name="location" value="${educationData.location}" placeholder="City, State">
                 </div>
                 <div class="form-group">
-                    <label for="startDate_${id}">Start Date</label>
-                    <input type="month" id="startDate_${id}" name="startDate" value="${educationData.startDate}">
+                    <label for="startDate_${educationData.id}">Start Date</label>
+                    <input type="month" id="startDate_${educationData.id}" name="startDate" value="${educationData.startDate}">
                 </div>
                 <div class="form-group">
-                    <label for="endDate_${id}">End Date</label>
-                    <input type="month" id="endDate_${id}" name="endDate" value="${educationData.endDate}">
+                    <label for="endDate_${educationData.id}">End Date</label>
+                    <input type="month" id="endDate_${educationData.id}" name="endDate" value="${educationData.endDate}">
                 </div>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="gpa_${id}">GPA (Optional)</label>
-                    <input type="text" id="gpa_${id}" name="gpa" value="${educationData.gpa}" placeholder="e.g., 3.8">
+                    <label for="gpa_${educationData.id}">GPA (Optional)</label>
+                    <input type="text" id="gpa_${educationData.id}" name="gpa" value="${educationData.gpa}" placeholder="e.g., 3.8">
                 </div>
                 <div class="form-group">
                     <!-- Spacer -->
@@ -733,8 +741,8 @@ class FormHandler {
             </div>
             
             <div class="form-group">
-                <label for="description_${id}">Additional Details</label>
-                <textarea id="description_${id}" name="description" rows="3" placeholder="Relevant coursework, honors, activities...">${educationData.description}</textarea>
+                <label for="description_${educationData.id}">Additional Details</label>
+                <textarea id="description_${educationData.id}" name="description" rows="3" placeholder="Relevant coursework, honors, activities...">${educationData.description}</textarea>
             </div>
         `;
         
@@ -748,8 +756,8 @@ class FormHandler {
     }
     
     addSkillEntry(skillName = '', skillLevel = 'Intermediate', data = null) {
-        const id = Utils.generateId();
-        const skillData = data || {
+        const id = data?.id || Utils.generateId();
+        const skillData = data ? { ...data, id: data.id || id } : {
             id,
             name: skillName,
             level: skillLevel
@@ -772,7 +780,8 @@ class FormHandler {
         
         const entryDiv = document.createElement('div');
         entryDiv.className = 'skill-entry';
-        entryDiv.dataset.entryId = id;
+        entryDiv.dataset.entryId = skillData.id;
+        entryDiv.dataset.section = 'skills';
         
         entryDiv.innerHTML = `
             <input type="text" name="name" value="${skillData.name}" placeholder="Skill name..." required>
@@ -784,7 +793,7 @@ class FormHandler {
                     <option value="Expert" ${skillData.level === 'Expert' ? 'selected' : ''}>Expert</option>
                 </select>
             </div>
-            <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('skills', '${id}')">
+            <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('skills', '${skillData.id}')">
                 <i class="fas fa-times"></i>
             </button>
         `;
@@ -799,20 +808,20 @@ class FormHandler {
     }
 
     addProjectEntry(data = null) {
-        const id = Utils.generateId();
-        const entry = data || { id, title: '', role: '', duration: '', description: '' };
+        const id = data?.id || Utils.generateId();
+        const entry = data ? { ...data, id: data.id || id } : { id, title: '', role: '', duration: '', description: '' };
         if (!data) this.formData.projects.push(entry);
         const container = document.getElementById('projectsContainer');
         this.clearEmptyState('projectsContainer');
         const div = document.createElement('div');
         div.className = 'form-entry';
-        div.dataset.entryId = id;
+        div.dataset.entryId = entry.id;
         div.dataset.section = 'projects';
         div.innerHTML = `
             <div class="entry-header">
                 <h4 class="entry-title">Project ${this.formData.projects.length}</h4>
                 <div class="entry-actions">
-                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('projects', '${id}')">
+                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('projects', '${entry.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -843,20 +852,20 @@ class FormHandler {
     }
 
     addCertificationEntry(data = null) {
-        const id = Utils.generateId();
-        const entry = data || { id, name: '', issuer: '', year: '' };
+        const id = data?.id || Utils.generateId();
+        const entry = data ? { ...data, id: data.id || id } : { id, name: '', issuer: '', year: '' };
         if (!data) this.formData.certifications.push(entry);
         const container = document.getElementById('certificationsContainer');
         this.clearEmptyState('certificationsContainer');
         const div = document.createElement('div');
         div.className = 'form-entry';
-        div.dataset.entryId = id;
+        div.dataset.entryId = entry.id;
         div.dataset.section = 'certifications';
         div.innerHTML = `
             <div class="entry-header">
                 <h4 class="entry-title">Certification ${this.formData.certifications.length}</h4>
                 <div class="entry-actions">
-                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('certifications', '${id}')">
+                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('certifications', '${entry.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -880,20 +889,20 @@ class FormHandler {
     }
 
     addAchievementEntry(data = null) {
-        const id = Utils.generateId();
-        const entry = data || { id, title: '', description: '' };
+        const id = data?.id || Utils.generateId();
+        const entry = data ? { ...data, id: data.id || id } : { id, title: '', description: '' };
         if (!data) this.formData.achievements.push(entry);
         const container = document.getElementById('achievementsContainer');
         this.clearEmptyState('achievementsContainer');
         const div = document.createElement('div');
         div.className = 'form-entry';
-        div.dataset.entryId = id;
+        div.dataset.entryId = entry.id;
         div.dataset.section = 'achievements';
         div.innerHTML = `
             <div class="entry-header">
                 <h4 class="entry-title">Achievement ${this.formData.achievements.length}</h4>
                 <div class="entry-actions">
-                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('achievements', '${id}')">
+                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('achievements', '${entry.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -911,20 +920,20 @@ class FormHandler {
     }
 
     addActivityEntry(data = null) {
-        const id = Utils.generateId();
-        const entry = data || { id, title: '', description: '' };
+        const id = data?.id || Utils.generateId();
+        const entry = data ? { ...data, id: data.id || id } : { id, title: '', description: '' };
         if (!data) this.formData.activities.push(entry);
         const container = document.getElementById('activitiesContainer');
         this.clearEmptyState('activitiesContainer');
         const div = document.createElement('div');
         div.className = 'form-entry';
-        div.dataset.entryId = id;
+        div.dataset.entryId = entry.id;
         div.dataset.section = 'activities';
         div.innerHTML = `
             <div class="entry-header">
                 <h4 class="entry-title">Activity ${this.formData.activities.length}</h4>
                 <div class="entry-actions">
-                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('activities', '${id}')">
+                    <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('activities', '${entry.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -942,14 +951,14 @@ class FormHandler {
     }
 
     addLanguageEntry(data = null) {
-        const id = Utils.generateId();
-        const entry = data || { id, name: '', proficiency: 'Fluent' };
+        const id = data?.id || Utils.generateId();
+        const entry = data ? { ...data, id: data.id || id } : { id, name: '', proficiency: 'Fluent' };
         if (!data) this.formData.languages.push(entry);
         const container = document.getElementById('languagesContainer');
         this.clearEmptyState('languagesContainer');
         const div = document.createElement('div');
         div.className = 'simple-entry';
-        div.dataset.entryId = id;
+        div.dataset.entryId = entry.id;
         div.dataset.section = 'languages';
         div.innerHTML = `
             <input type="text" name="name" value="${entry.name}" placeholder="Language (e.g., English)" required>
@@ -961,7 +970,7 @@ class FormHandler {
                     <option value="Native" ${entry.proficiency==='Native'?'selected':''}>Native</option>
                 </select>
             </div>
-            <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('languages', '${id}')">
+            <button type="button" class="btn-icon btn-remove" onclick="formHandler.removeEntry('languages', '${entry.id}')">
                 <i class="fas fa-times"></i>
             </button>
         `;
@@ -984,6 +993,19 @@ class FormHandler {
         
         // Auto-save
         this.autoSaveHandler();
+
+        // Restore empty state if section is now empty
+        const containerMap = {
+            skills: 'skillsContainer',
+            projects: 'projectsContainer',
+            certifications: 'certificationsContainer',
+            achievements: 'achievementsContainer',
+            activities: 'activitiesContainer',
+            languages: 'languagesContainer'
+        };
+        if (containerMap[section] && this.formData[section].length === 0) {
+            setTimeout(() => this.renderEmptyStates(), 320);
+        }
         
         Utils.showToast(`${Utils.capitalize(section.slice(0, -1))} entry removed`, 'info');
     }
@@ -1001,11 +1023,90 @@ class FormHandler {
         });
     }
     
+    syncFromDOM() {
+        const form = document.getElementById('resumeFormElement');
+        if (!form) return;
+
+        form.querySelectorAll('input, textarea, select').forEach(el => {
+            if (!el.name || el.type === 'radio') return;
+            const value = el.type === 'checkbox' ? el.checked : el.value;
+            this.updateFormData(el.name, value, el);
+        });
+
+        const userTypeRadio = form.querySelector('input[name="userType"]:checked');
+        if (userTypeRadio) {
+            this.formData.userType = userTypeRadio.value;
+        }
+    }
+
+    getFormDataForRender() {
+        this.syncFromDOM();
+        const data = Utils.deepClone(this.formData);
+
+        data.experience = data.experience.filter(e => e.title?.trim() || e.company?.trim() || e.description?.trim());
+        data.education = data.education.filter(e => e.degree?.trim() || e.school?.trim() || e.description?.trim());
+        data.skills = data.skills.filter(s => s.name?.trim());
+        data.projects = (data.projects || []).filter(p => p.title?.trim());
+        data.certifications = (data.certifications || []).filter(c => c.name?.trim());
+        data.achievements = (data.achievements || []).filter(a => a.title?.trim());
+        data.activities = (data.activities || []).filter(a => a.title?.trim());
+        data.languages = (data.languages || []).filter(l => l.name?.trim());
+
+        return data;
+    }
+
+    validateForPreview() {
+        this.syncFromDOM();
+        const errors = [];
+
+        if (!this.formData.personal.fullName.trim()) {
+            errors.push('Full name is required');
+        }
+        if (!this.formData.personal.email.trim()) {
+            errors.push('Email is required');
+        } else if (!Utils.isValidEmail(this.formData.personal.email)) {
+            errors.push('Valid email is required');
+        }
+
+        this.formData.experience.forEach((exp, i) => {
+            const partial = exp.title.trim() || exp.company.trim() || exp.description.trim();
+            if (partial && (!exp.title.trim() || !exp.company.trim())) {
+                errors.push(`Experience ${i + 1}: job title and company are required`);
+            }
+        });
+
+        this.formData.education.forEach((edu, i) => {
+            const partial = edu.degree.trim() || edu.school.trim();
+            if (partial && (!edu.degree.trim() || !edu.school.trim())) {
+                errors.push(`Education ${i + 1}: degree and school are required`);
+            }
+        });
+
+        this.formData.projects.forEach((p, i) => {
+            const partial = p.title.trim() || p.role.trim() || p.description.trim();
+            if (partial && !p.title.trim()) {
+                errors.push(`Project ${i + 1}: title is required`);
+            }
+        });
+
+        this.formData.certifications.forEach((c, i) => {
+            const partial = c.name.trim() || c.issuer.trim() || c.year.trim();
+            if (partial && !c.name.trim()) {
+                errors.push(`Certification ${i + 1}: name is required`);
+            }
+        });
+
+        if (errors.length > 0) {
+            Utils.showToast(`Please fix these errors:\n• ${errors.join('\n• ')}`, 'error', 6000);
+            return false;
+        }
+        return true;
+    }
+
     validateForm() {
+        this.syncFromDOM();
         let isValid = true;
         const errors = [];
-        
-        // Validate personal information
         if (!this.formData.personal.fullName.trim()) {
             errors.push('Full name is required');
             isValid = false;
@@ -1030,17 +1131,19 @@ class FormHandler {
             }
         }
 
-        // Validate experience entries
+        // Validate experience — skip completely empty entries
         this.formData.experience.forEach((exp, index) => {
-            if (!exp.title.trim() || !exp.company.trim()) {
+            const partial = exp.title.trim() || exp.company.trim() || exp.description.trim();
+            if (partial && (!exp.title.trim() || !exp.company.trim())) {
                 errors.push(`Experience ${index + 1}: Job title and company are required`);
                 isValid = false;
             }
         });
         
-        // Validate education entries
+        // Validate education — skip completely empty entries
         this.formData.education.forEach((edu, index) => {
-            if (!edu.degree.trim() || !edu.school.trim()) {
+            const partial = edu.degree.trim() || edu.school.trim();
+            if (partial && (!edu.degree.trim() || !edu.school.trim())) {
                 errors.push(`Education ${index + 1}: Degree and school are required`);
                 isValid = false;
             }
@@ -1054,37 +1157,44 @@ class FormHandler {
     }
     
     previewResume() {
-        if (!this.validateForm()) {
+        if (!this.validateForPreview()) {
             return;
         }
         
-        // Save current data
         this.saveFormData();
+        window.app.navigateToPreview();
+    }
+    
+    generateResume() {
+        if (!this.validateForPreview()) {
+            return;
+        }
         
-        // Navigate to preview
+        this.saveFormData();
         window.app.navigateToPreview();
     }
     
     generatePDF() {
-        if (!this.validateForm()) {
+        if (!this.validateForPreview()) {
             return;
         }
         
+        this.saveFormData();
+        const formData = this.getFormDataForRender();
+        const templateId = templateManager.getSelectedTemplate();
+        
         Utils.showLoading('Generating PDF...');
         
-        // Use PDF generator
-        setTimeout(() => {
-            pdfGenerator.generatePDF(this.formData, templateManager.getSelectedTemplate())
-                .then(() => {
-                    Utils.hideLoading();
-                    Utils.showToast('Resume PDF generated successfully!', 'success');
-                })
-                .catch(error => {
-                    Utils.hideLoading();
-                    Utils.showToast('Error generating PDF. Please try again.', 'error');
-                    console.error('PDF generation error:', error);
-                });
-        }, 500);
+        pdfGenerator.generatePDF(formData, templateId)
+            .then(() => {
+                Utils.hideLoading();
+                Utils.showToast('Resume PDF generated successfully!', 'success');
+            })
+            .catch(error => {
+                Utils.hideLoading();
+                Utils.showToast('Error generating PDF. Please try again.', 'error');
+                console.error('PDF generation error:', error);
+            });
     }
     
     saveFormData() {
@@ -1094,7 +1204,18 @@ class FormHandler {
     loadSavedData() {
         const savedData = Utils.storage.get('resumeFormData');
         if (savedData) {
-            this.formData = { ...this.formData, ...savedData };
+            this.formData = {
+                userType: savedData.userType || 'professional',
+                personal: { ...this.formData.personal, ...(savedData.personal || {}) },
+                experience: Array.isArray(savedData.experience) ? savedData.experience : [],
+                education: Array.isArray(savedData.education) ? savedData.education : [],
+                skills: Array.isArray(savedData.skills) ? savedData.skills : [],
+                projects: Array.isArray(savedData.projects) ? savedData.projects : [],
+                certifications: Array.isArray(savedData.certifications) ? savedData.certifications : [],
+                achievements: Array.isArray(savedData.achievements) ? savedData.achievements : [],
+                activities: Array.isArray(savedData.activities) ? savedData.activities : [],
+                languages: Array.isArray(savedData.languages) ? savedData.languages : []
+            };
             this.populateForm();
         }
     }
@@ -1183,6 +1304,7 @@ class FormHandler {
     }
     
     getFormData() {
+        this.syncFromDOM();
         return this.formData;
     }
     
